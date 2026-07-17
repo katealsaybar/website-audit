@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>(function(){var t=localStorage.getItem('trs-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRS Website Efficiency Audit — Live Progress Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS (derived from TRS/TRK Figma brand file — Warm · Real · Expert) ============ */
+:root{
+  --ink:#1a1a1e; --ink-soft:#43434d; --muted:#6b6b76; --faint:#9a9aa4;
+  --bg:#faf9f6; --surface:#ffffff; --surface-2:#f3f2ee; --border:#e6e4dd; --border-soft:#efeee9;
+  --teal:#99f6e4; --teal-deep:#0e6b58; --lime:#eef3c7; --lavender:#c4b5fd; --lavender-deep:#5b4b9e; --coral:#ff9b9b; --coral-deep:#a83232;
+  --pass-bg:#e3f7ee; --pass-fg:#0e6b58; --pass-bd:#a9e2cb;
+  --fail-bg:#fdecec; --fail-fg:#a3312f; --fail-bd:#f3c1bf;
+  --partial-bg:#fdf3da; --partial-fg:#8a5a00; --partial-bd:#eeda9c;
+  --na-bg:#ececee; --na-fg:#55555f; --na-bd:#d7d6da;
+  --todo-fg:#5b4b9e; --todo-bd:#c4b5fd;
+  --crit-bg:#fdecec; --crit-bd:#e79a97;
+  --sidebar-w:288px; --header-h:64px;
+  --scroll-bar-h:4px;
+  --font-serif:'Playfair Display',Georgia,'Times New Roman',serif;
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --shadow-sm:0 1px 2px rgba(20,20,25,.06); --shadow-md:0 4px 16px rgba(20,20,25,.08);
+  --radius:12px; --radius-sm:8px;
+}
+html[data-theme="dark"]{
+  --ink:#f1f0ec; --ink-soft:#d4d2c9; --muted:#a4a29a; --faint:#7c7a72;
+  --bg:#17171a; --surface:#1e1e22; --surface-2:#26262b; --border:#34343a; --border-soft:#2b2b30;
+  --pass-bg:#173a30; --pass-fg:#6fe3bf; --pass-bd:#245145;
+  --fail-bg:#3a1f1f; --fail-fg:#ff9b9b; --fail-bd:#54302f;
+  --partial-bg:#3a3116; --partial-fg:#f0cf6b; --partial-bd:#544a2b;
+  --na-bg:#28282e; --na-fg:#b7b6bd; --na-bd:#38383f;
+  --todo-fg:#c4b5fd; --todo-bd:#4b3f7a;
+  --crit-bg:#3a1f1f; --crit-bd:#7a3f3d;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3); --shadow-md:0 4px 20px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4{font-family:var(--font-serif);font-weight:600;line-height:1.25;margin:0 0 .4em;color:var(--ink);}
+a{color:inherit;}
+p{margin:0 0 .8em;}
+img{max-width:100%;display:block;border-radius:var(--radius-sm);border:1px solid var(--border);}
+code{background:var(--surface-2);padding:.1em .4em;border-radius:4px;font-size:.9em;}
+
+/* ============ LAYOUT SHELL ============ */
+.scroll-progress{position:fixed;top:0;left:0;height:var(--scroll-bar-h);background:var(--teal);width:0%;z-index:70;transition:width .1s linear;}
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:none;align-items:center;padding:0 16px;z-index:60;gap:12px;}
+.topbar .brand{font-family:var(--font-serif);font-weight:600;font-size:16px;}
+.hamburger{width:38px;height:38px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.hamburger span,.hamburger span::before,.hamburger span::after{content:'';display:block;width:18px;height:2px;background:var(--ink);position:relative;}
+.hamburger span::before{position:absolute;top:-6px;}
+.hamburger span::after{position:absolute;top:6px;}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:20px 0 40px;z-index:50;}
+.sidebar-brand{padding:0 20px 16px;border-bottom:1px solid var(--border-soft);margin-bottom:8px;}
+.sidebar-brand{position:sticky;top:-20px;margin-top:-20px;padding-top:20px;background:var(--surface);z-index:10;}
+.sidebar-brand .name{font-family:var(--font-serif);font-weight:700;font-size:18px;}
+.sidebar-brand-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.theme-toggle{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;line-height:1;}
+.theme-toggle:hover{background:var(--surface);}
+.theme-icon-light{display:none;}
+html[data-theme="light"] .theme-icon-dark{display:none;}
+html[data-theme="light"] .theme-icon-light{display:inline;}
+.sb-group{margin:2px 0;}
+.sb-link{display:flex;align-items:center;gap:8px;padding:9px 20px;font-size:13.5px;color:var(--ink-soft);text-decoration:none;border-left:3px solid transparent;font-weight:500;}
+.sb-link:hover{background:var(--surface-2);}
+.sb-link.active{border-left-color:var(--lavender-deep);background:var(--surface-2);color:var(--ink);font-weight:600;}
+.sb-block-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 20px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;cursor:pointer;user-select:none;margin-top:10px;}
+.sb-block-toggle .car{transition:transform .15s;font-size:10px;}
+.sb-block-toggle.collapsed .car{transform:rotate(-90deg);}
+.sb-sub{padding-left:8px;}
+.sb-sub.collapsed{display:none;}
+.sb-sub .sb-link{padding-left:34px;font-size:12.5px;}
+.sb-pill{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.sb-pill.p-pass{background:var(--pass-fg);} .sb-pill.p-fail{background:var(--fail-fg);}
+.sb-pill.p-partial{background:var(--partial-fg);} .sb-pill.p-na{background:var(--na-fg);}
+.sb-pill.p-todo{background:var(--todo-fg);}
+
+.shell{margin-left:var(--sidebar-w);padding:40px 48px 100px;max-width:980px;}
+.sidebar-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:45;}
+
+@media (max-width:900px){
+  .topbar{display:flex;}
+  .sidebar{left:calc(-1 * var(--sidebar-w));transition:left .2s ease;top:var(--header-h);box-shadow:var(--shadow-md);}
+  .sidebar.open{left:0;}
+  .sidebar-scrim.show{display:block;top:var(--header-h);}
+  .shell{margin-left:0;padding:calc(var(--header-h) + 24px) 20px 80px;}
+}
+
+/* ============ HEADER / OVERVIEW ============ */
+.doc-header{margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid var(--border);}
+.doc-header h1{font-size:30px;margin-bottom:8px;}
+.doc-header-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.doc-header-top h1{margin-bottom:0;}
+.doc-logo{width:56px;height:auto;flex-shrink:0;border:none;border-radius:0;}
+.doc-logo.logo-light{display:none;}
+html[data-theme="light"] .doc-logo.logo-dark{display:none;}
+html[data-theme="light"] .doc-logo.logo-light{display:inline;}
+@media (max-width:520px){.doc-logo{width:40px;}}
+.doc-meta{color:var(--muted);font-size:13.5px;display:flex;flex-wrap:wrap;gap:6px 0;}
+.doc-meta .dot{margin:0 8px;color:var(--faint);}
+.owners{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;}
+.owners summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(--ink-soft);list-style:none;}
+.owners summary::-webkit-details-marker{display:none;}
+.owners summary::before{content:'▸ ';color:var(--muted);}
+.owners[open] summary::before{content:'▾ ';}
+@keyframes owners-glow{
+  0%,100%{box-shadow:0 0 0 0 rgba(196,181,253,.5);border-color:var(--lavender-deep);}
+  50%{box-shadow:0 0 0 9px rgba(196,181,253,0);border-color:var(--lavender-deep);}
+}
+.owners.needs-read{animation:owners-glow 2.2s ease-in-out infinite;}
+.owners.needs-read summary::after{content:'👀 Please read';font-size:10.5px;font-weight:700;color:var(--lavender-deep);margin-left:10px;letter-spacing:.02em;}
+.owners[open].needs-read{animation:none;}
+.owners ul{margin:12px 0 0;padding-left:20px;font-size:13.5px;color:var(--ink-soft);}
+.owners li{margin-bottom:6px;}
+
+section.block-section{margin:48px 0;}
+section.block-section > h2{font-size:22px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+.block-count{font-size:13px;color:var(--muted);font-weight:400;font-family:var(--font-sans);}
+.block-actions{display:flex;gap:8px;margin-bottom:16px;}
+.btn-mini{font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--ink-soft);font-family:var(--font-sans);}
+.btn-mini:hover{background:var(--surface-2);}
+
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0 28px;}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:center;}
+.sum-card .num{font-family:var(--font-serif);font-size:32px;font-weight:700;}
+.sum-card .lbl{font-size:12.5px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
+.sum-card.pass .num{color:var(--pass-fg);} .sum-card.fail .num{color:var(--fail-fg);}
+.sum-card.na .num{color:var(--na-fg);} .sum-card.pending .num{color:var(--partial-fg);}
+@media (max-width:700px){.summary-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-bar{display:flex;align-items:center;gap:10px;margin:8px 0;}
+.stat-bar-track{flex:1;max-width:180px;height:8px;background:var(--surface-2);border-radius:20px;overflow:hidden;border:1px solid var(--border);}
+.stat-bar-fill{height:100%;background:var(--fail-fg);border-radius:20px;}
+.stat-bar-fill.warn{background:var(--partial-fg);}
+.stat-bar-label{font-size:12.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;}
+.rollup-collapsible{max-height:80px;overflow:hidden;position:relative;border-radius:var(--radius-sm);transition:max-height .35s ease;}
+.rollup-collapsible.expanded{max-height:3000px;}
+.rollup-peek{position:absolute;bottom:0;left:0;right:0;height:80px;display:flex;align-items:center;justify-content:center;background:linear-gradient(to bottom, transparent, var(--bg) 75%);font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.02em;pointer-events:none;z-index:2;}
+.rollup-collapsible.expanded .rollup-peek{opacity:0;}
+
+.callout{border-radius:var(--radius);padding:18px 20px;margin:0 0 24px;border:1px solid;}
+.callout.critical{background:var(--crit-bg);border-color:var(--crit-bd);}
+.callout h3{font-size:15px;margin-bottom:8px;color:var(--fail-fg);font-family:var(--font-sans);font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.callout ul{margin:0;padding-left:20px;font-size:14px;}
+.callout li{margin-bottom:8px;}
+.callout a.xref{font-weight:600;text-decoration:underline;}
+
+.todo-list{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:10px;}
+.todo-item{background:var(--surface);border:1px dashed var(--todo-bd);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:12px;}
+.todo-item a{text-decoration:none;font-weight:600;color:var(--ink);flex-grow:1;}
+.todo-item a:hover{text-decoration:underline;}
+.todo-badge{font-size:11px;font-weight:700;color:var(--todo-fg);border:1px dashed var(--todo-bd);border-radius:20px;padding:3px 10px;white-space:nowrap;flex-shrink:0;}
+
+/* ============ STATUS PILLS ============ */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;border:1px solid;white-space:nowrap;letter-spacing:.02em;}
+.pill.pass{background:var(--pass-bg);color:var(--pass-fg);border-color:var(--pass-bd);}
+.pill.fail{background:var(--fail-bg);color:var(--fail-fg);border-color:var(--fail-bd);}
+.pill.partial{background:var(--partial-bg);color:var(--partial-fg);border-color:var(--partial-bd);}
+.pill.na{background:var(--na-bg);color:var(--na-fg);border-color:var(--na-bd);}
+.pill.todo{background:transparent;color:var(--todo-fg);border:1px dashed var(--todo-bd);}
+
+/* ============ ITEM CARDS ============ */
+details.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow-sm);scroll-margin-top:24px;}
+details.card[open]{box-shadow:var(--shadow-md);}
+details.card.fail-open{border-color:var(--fail-bd);}
+.card > summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;align-items:flex-start;gap:12px;}
+.card > summary::-webkit-details-marker{display:none;}
+.card-num{font-family:var(--font-serif);font-weight:700;font-size:15px;color:var(--ink-soft);flex-shrink:0;min-width:44px;}
+.card-summary-txt{flex-grow:1;font-size:14.5px;color:var(--ink-soft);font-weight:500;}
+.card-chevron{color:var(--muted);flex-shrink:0;transition:transform .15s;font-size:12px;margin-top:3px;}
+details[open] .card-chevron{transform:rotate(180deg);}
+.card-body{padding:0 20px 20px 20px;border-top:1px solid var(--border-soft);}
+.card-body > *:first-child{margin-top:16px;}
+.card-body h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:18px 0 8px;font-family:var(--font-sans);font-weight:700;}
+.card-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px;}
+
+/* nested evidence toggle */
+.evi-toggle{margin-top:14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);}
+.evi-toggle summary{cursor:pointer;padding:10px 14px;font-size:13px;font-weight:600;color:var(--ink-soft);list-style:none;display:flex;align-items:center;gap:8px;}
+.evi-toggle summary::-webkit-details-marker{display:none;}
+.evi-toggle summary .car{transition:transform .15s;font-size:10px;color:var(--muted);}
+.evi-toggle[open] summary .car{transform:rotate(90deg);}
+.evi-body{padding:4px 14px 16px;}
+.shot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:10px;}
+.shot{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.shot img{border:none;border-radius:0;width:100%;}
+.shot .cap{padding:9px 11px;font-size:12px;color:var(--muted);line-height:1.4;}
+.shot .cap strong{color:var(--ink-soft);}
+
+/* ============ TABLES ============ */
+.tbl-wrap{overflow-x:auto;margin:12px 0;border:1px solid var(--border);border-radius:var(--radius-sm);}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:480px;}
+thead th{background:var(--surface-2);text-align:left;padding:9px 12px;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);vertical-align:top;color:var(--ink-soft);}
+tbody tr:last-child td{border-bottom:none;}
+tbody td:first-child{font-weight:600;color:var(--ink);}
+
+a.xref{color:var(--lavender-deep);text-decoration:underline;text-decoration-style:dotted;font-weight:600;cursor:pointer;}
+a.link-ext{color:var(--lavender-deep);text-decoration:underline;word-break:break-all;}
+ul.plain{padding-left:20px;margin:8px 0;}
+ul.plain li{margin-bottom:6px;}
+
+.top-fix-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.top-fix-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;}
+.top-fix-item .n{font-family:var(--font-serif);font-weight:700;color:var(--lavender-deep);margin-right:6px;}
+.top-fix-item .owner-tag{font-size:11.5px;color:var(--muted);display:block;margin-top:4px;}
+
+.footer-note{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:12.5px;color:var(--faint);text-align:center;}
+
+@media print{
+  .sidebar,.topbar,.sidebar-scrim,.block-actions,.hamburger{display:none !important;}
+  .shell{margin-left:0;padding:0;max-width:100%;}
+  details{display:block !important;}
+  details.card, .evi-toggle, .owners{border:1px solid #ccc !important;box-shadow:none !important;break-inside:avoid;}
+  .card-chevron, .evi-toggle .car{display:none;}
+  body{background:#fff;color:#000;}
+}
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+<div class="topbar">
+  <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu"><span></span></button>
+  <div class="brand">TRS Audit Tracker</div>
+</div>
+<div class="sidebar-scrim" id="scrim"></div>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-row">
+      <div>
+        <div class="name">TRS Audit Tracker</div>
+        <div class="sub">tararosesalon.com · 17 Jul 2026</div>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
+        <span class="theme-icon-dark">🌙</span>
+        <span class="theme-icon-light">☀️</span>
+      </button>
+    </div>
+  </div>
+  <a class="sb-link" href="#overview">Overview / Summary</a>
+  <a class="sb-link" href="#still-todo">Still To Do</a>
+  <a class="sb-link" href="#new-findings">New Findings</a>
+  <a class="sb-link" href="#top-fixes">Top Fixes</a>
+
+  <div class="sb-block-toggle" data-target="sb-b1"><span>Block 1 — Technical Health</span><span class="car">▾</span></div>
+  <div class="sb-sub" id="sb-b1">
+    <a class="sb-link" href="#item-1-1"><span class="sb-pill p-pass"></span>1.1 PageSpeed</a>
+    <a class="sb-link" href="#item-1-2"><span class="sb-pill p-partial"></span>1.2 Lighthouse</a>
+    <a class="sb-link" href="#item-1-2b"><span class="sb-pill p-pass"></span>1.2b WebPageTest</a>
+    <a class="sb-link" href="#item-1-3a"><span class="sb-pill p-pass"></span>1.3a Core Web Vitals</a>
+    <a class="sb-link" href="#item-1-3b"><span class="sb-pill p-fail"></span>1.3b Indexing/Pages</a>
+    <a class="sb-link" href="#item-1-3c"><span class="sb-pill p-na"></span>1.3c Mobile Usability</a>
+    <a class="sb-link" href="#item-1-4"><span class="sb-pill p-fail"></span>1.4 Crawl 4xx/Redirects</a>
+    <a class="sb-link" href="#item-1-5"><span class="sb-pill p-fail"></span>1.5 Image Alt Text</a>
+    <a class="sb-link" href="#item-1-6"><span class="sb-pill p-fail"></span>1.6 HTTPS/Console</a>
+  </div>
+
+  <div class="sb-block-toggle" data-target="sb-b2"><span>Block 2 — SEO &amp; Structured Data</span><span class="car">▾</span></div>
+  <div class="sb-sub" id="sb-b2">
+    <a class="sb-link" href="#item-2-1"><span class="sb-pill p-pass"></span>2.1 Titles/Metas/H1s</a>
+    <a class="sb-link" href="#item-2-2"><span class="sb-pill p-fail"></span>2.2 Lexicon Compliance</a>
+    <a class="sb-link" href="#item-2-3"><span class="sb-pill p-fail"></span>2.3 Structured Data</a>
+    <a class="sb-link" href="#item-2-4"><span class="sb-pill p-pass"></span>2.4 Canonical URLs</a>
+    <a class="sb-link" href="#item-2-5"><span class="sb-pill p-fail"></span>2.5 Sitemap</a>
+    <a class="sb-link" href="#item-2-6"><span class="sb-pill p-pass"></span>2.6 Robots.txt</a>
+  </div>
+
+  <div class="sb-block-toggle" data-target="sb-b3"><span>Block 3 — Behaviour</span><span class="car">▾</span></div>
+  <div class="sb-sub" id="sb-b3">
+    <a class="sb-link" href="#item-3-1"><span class="sb-pill p-partial"></span>3.1 GA4 Firing Check</a>
+    <a class="sb-link" href="#item-3-2"><span class="sb-pill p-pass"></span>3.2 Microsoft Clarity</a>
+    <a class="sb-link" href="#item-3-3"><span class="sb-pill p-na"></span>3.3 Vercel Analytics</a>
+    <a class="sb-link" href="#item-3-4"><span class="sb-pill p-partial"></span>3.4 GA4 30-Day Report</a>
+    <a class="sb-link" href="#item-3-5"><span class="sb-pill p-fail"></span>3.5 Mobile Session Review</a>
+  </div>
+
+  <div class="sb-block-toggle" data-target="sb-b4"><span>Block 4 — Conversion &amp; Attribution</span><span class="car">▾</span></div>
+  <div class="sb-sub" id="sb-b4">
+    <a class="sb-link" href="#item-4-1"><span class="sb-pill p-fail"></span>4.1 UTM Tagging</a>
+    <a class="sb-link" href="#item-4-2"><span class="sb-pill p-todo"></span>4.2 GA4 Funnel Map</a>
+    <a class="sb-link" href="#item-4-3"><span class="sb-pill p-todo"></span>4.3 GHL Cross-Check</a>
+    <a class="sb-link" href="#item-4-4"><span class="sb-pill p-todo"></span>4.4 Phorest Cross-Check</a>
+    <a class="sb-link" href="#item-4-5"><span class="sb-pill p-partial"></span>4.5 Real-Phone Form Test</a>
+    <a class="sb-link" href="#item-4-6"><span class="sb-pill p-fail"></span>4.6 Booking Channel Test</a>
+  </div>
+
+  <div class="sb-block-toggle" data-target="sb-b5"><span>Block 5 — Local + AI Search</span><span class="car">▾</span></div>
+  <div class="sb-sub" id="sb-b5">
+    <a class="sb-link" href="#item-5-1"><span class="sb-pill p-fail"></span>5.1 GBP Freshness</a>
+    <a class="sb-link" href="#item-5-2"><span class="sb-pill p-fail"></span>5.2 Local Pack Ranking</a>
+    <a class="sb-link" href="#item-5-3"><span class="sb-pill p-partial"></span>5.3 AI Search Visibility</a>
+    <a class="sb-link" href="#item-5-4"><span class="sb-pill p-fail"></span>5.4/5.5 Confidence Promise</a>
+  </div>
+
+  <a class="sb-link" href="#rollup" style="margin-top:12px;">Pass/Fail Roll-Up</a>
+  <a class="sb-link" href="#open-questions">Open Questions</a>
+  <a class="sb-link" href="#recommendations">Recommendations from Tara</a>
+</nav>
+
+<main class="shell">
+
+<header class="doc-header" id="overview">
+  <div class="doc-header-top">
+    <img src="assets/white_logo_transparent.png" alt="Tara Rose Salon logo" class="doc-logo logo-dark">
+    <img src="assets/6.png" alt="Tara Rose Salon logo" class="doc-logo logo-light">
+    <h1>TRS Website Efficiency Audit — Live Progress Tracker</h1>
+  </div>
+  <div class="doc-meta">
+    Site: <strong>tararosesalon.com</strong><span class="dot">·</span>
+    Original run: 15 July 2026<span class="dot">·</span>
+    Last updated: 17 July 2026<span class="dot">·</span>
+    Against: Handover Checklist v2 (Click-Through Edition)
+  </div>
+  <details class="owners needs-read" id="ownersDetails">
+    <summary>How to read this + Owner Assignments &amp; Sign-Off</summary>
+    <p style="margin-top:10px;">This is the same audit doc from the automated run, now updated with everything Kate has tested live since — Step 1 (PageSpeed/Lighthouse/WebPageTest) is done, Step 2 (Search Console) hit a blocker, and a new critical finding surfaced (booking chat widget). Statuses below reflect where things actually stand right now, not just the original automated pass.</p>
+    <ul>
+      <li>Owner A (Tech lead / dev — website maintenance): LID</li>
+      <li>GHL pipelines maintenance: LID</li>
+      <li>Google Business Profile maintenance: LID</li>
+      <li>Client review replies (carve-out — stays separate from GBP maintenance above): Kate</li>
+      <li>Owner B (Marketing / content): TBD — not yet assigned</li>
+      <li>Deadline: 5 working days from the 15 July 2026 handover per the checklist — approx. 22 July 2026. Flag to Tara/Owner A to confirm, since several Top Fixes (schema, booking widget, indexing) are unlikely to close by then.</li>
+      <li>Report back to: Tara — to be confirmed</li>
+    </ul>
+  </details>
+</header>
+
+<div class="summary-grid">
+  <div class="sum-card pass"><div class="num">5</div><div class="lbl">Pass</div></div>
+  <div class="sum-card fail"><div class="num">18</div><div class="lbl">Fail</div></div>
+  <div class="sum-card na"><div class="num">1</div><div class="lbl">N/A</div></div>
+  <div class="sum-card pending"><div class="num">4</div><div class="lbl">Pending / Not Started</div></div>
+</div>
+
+<div class="callout critical">
+  <h3>🚨 Critical — needs attention today</h3>
+  <ul>
+    <li><strong>Booking chat widget fails to submit.</strong> 100% of visitors hitting the primary "Book Now" CTA on desktop hit a dead end (red "Failed" / "Try Again!!"). See <a class="xref" href="#item-4-6">4.6 Booking Channel Test</a> and <a class="xref" href="#top-fixes">Top Fix #2</a>.</li>
+    <li><strong>"Janabiyah Quiz Hijack"</strong> — a giveaway/quiz popup takes over /en/bh/locations/janabiyah/ on load, blocking location/booking access in 11 of ~15 sampled sessions. See <a class="xref" href="#item-3-5">3.5 Mobile Session Review</a>.</li>
+  </ul>
+</div>
+
+<section id="still-todo" class="block-section">
+  <h2>Still To Do</h2>
+  <p style="color:var(--muted);font-size:13.5px;margin-top:-8px;">Genuinely not-started items — not failures, just not reached yet.</p>
+  <ul class="todo-list">
+    <li class="todo-item"><a href="#item-4-2">4.2 — GA4 funnel map</a><span class="todo-badge">⏳ Pending Start</span></li>
+    <li class="todo-item"><a href="#item-4-3">4.3 — GHL cross-check</a><span class="todo-badge">⏳ Pending Start</span></li>
+    <li class="todo-item"><a href="#item-4-4">4.4 — Phorest cross-check</a><span class="todo-badge">⏳ Pending Start</span></li>
+    <li class="todo-item"><a href="#open-questions">Open Questions for Tara / Owners →</a><span class="todo-badge">3 open</span></li>
+  </ul>
+</section>
+
+<section id="new-findings" class="block-section">
+  <h2>🚨 New Findings Since Original Audit <span class="block-count">(added 16 July 2026)</span></h2>
+
+  <details class="card">
+    <summary><span class="card-num">#1</span><span class="card-summary-txt"><strong>Booking chat widget fails to submit</strong> — CRITICAL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p>The "Book Now" button opens a chat widget (not a Phorest deep link — already known from Top Fix #2). New finding: the widget itself is broken. Submitting the contact form returns a red "Failed" status with a "Try Again!!" prompt. Confirmed on two separate Google accounts, so it's not an account-specific issue — it's failing for every visitor right now.</p>
+      <p><strong>Why it matters:</strong> this isn't just an extra step anymore — it's a dead end. Right now, 100% of visitors trying to book through the primary CTA hit a wall with no fallback path.</p>
+      <p>Owner: A (dev) — Est: urgent, same-day if possible. See <a class="xref" href="#item-4-6">4.6</a>.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="card-num">#2</span><span class="card-summary-txt"><strong>Google Search Console — RESOLVED</strong> (was a wrong-account issue, not missing setup)</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p>Initial attempts under two different Google/GoDaddy accounts ("TK" personal, then a mixed search) surfaced Google's "Welcome" screen, suggesting no verified property existed. Investigation traced this to simply being logged into the wrong accounts — GoDaddy DNS actually held four separate google-site-verification TXT records (unclear which service each maps to), and Yoast SEO on the live WordPress site already had a working Google verification code in its Site Connections field. David (dev contact) granted Kate access to the actual long-standing Search Console property under kate@tararosesalon.com — it has been live and collecting data since mid-April 2026 (3,614 total web search clicks recorded).</p>
+      <p><strong>Result:</strong> <a class="xref" href="#item-1-3a">1.3</a> is NOT blocked — it was simply inaccessible due to account confusion. Real data now pulled below.</p>
+      <p><strong>Action for handover docs:</strong> note kate@tararosesalon.com as the account with GSC access, and log David as the technical contact who can grant/adjust access to Analytics and Search Console going forward.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View DNS verification evidence</summary>
+        <div class="evi-body">
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/godaddy-dns-verification.png" alt="GoDaddy DNS records showing four google-site-verification TXT entries"><div class="cap">DNS Records view (tararosesalon.com, GoDaddy account "TR") showing 4 separate google-site-verification TXT entries alongside anthropic, brevo, and facebook verification records — evidence the domain had prior verification activity despite initial account-access confusion.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="card-num">#3</span><span class="card-summary-txt"><strong>GBP Freshness + Confidence Promise cross-channel consistency</strong> — findings from direct GBP backend review</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <h4>5.1 — Posts stale, batch-scheduled, not weekly</h4>
+      <ul class="plain">
+        <li>All 4 UAE locations (Al Quoz, Khalifa City A, Motor City, Saadiyat) show their most recent post dated June 19, 2026 — identical across all four, confirming a one-time batch post rather than ongoing weekly management. 27 days stale as of 7/16.</li>
+        <li>Categories, hours, and addresses all otherwise current and accurate across all 4 UAE listings.</li>
+        <li>Al Quoz is missing the LinkedIn profile link present on Khalifa City, Motor City, and Saadiyat, and carries an extra "Hair removal service" category none of the others have.</li>
+        <li>Motor City's GBP "Menu or services link" field points to tararosesalon.com/services/ (missing the /en/ae/ prefix). Confirmed via direct site check: the live website's own navigation correctly uses /en/ae/services/ — so this is a GBP data-entry error only, not a broken link on the site itself.</li>
+      </ul>
+      <h4>Bahrain — most serious location, several compounding issues</h4>
+      <ul class="plain">
+        <li>GBP backend confirms hours ARE entered correctly (Mon–Wed 10am–9pm, Thu 9am–6pm, Fri closed, Sat 9am–6pm, Sun closed) — yet the public-facing listing shows zero hours ("Add missing information"). This is a publish/sync failure, not missing data on Kate's end.</li>
+        <li>Public listing also shows "Posting is currently turned off" — combined with the hours not displaying, this suggests the profile may be under a Google restriction or unverified state, not simply inactive.</li>
+        <li>Description still reads "opening soon... this January" while the Opening Date field is set to August 1, 2026 — six months out from today (7/16/26). Outdated copy, not a system error.</li>
+        <li>The saved Website field has a live Facebook click-tracking ID (fbclid=...) and utm_source=ig permanently baked into the URL — should be replaced with a clean canonical link.</li>
+        <li>"Janabiyah" vs "Hamala" is NOT a contradiction — Janabiyah is the business location, Hamala is listed separately as a valid service area. No fix needed here.</li>
+      </ul>
+      <h4>5.4/5.5 — Confidence Promise / brand phrase consistency</h4>
+      <ul class="plain">
+        <li>GBP descriptions for Al Quoz, Khalifa City A, and Saadiyat all include the phrase "7-Day Confidence Promise."</li>
+        <li>The actual Motor City location page does NOT use that phrase at all — instead it reads "7-Day Happiness Guarante[e]" (missing final "e", live typo), a completely different tagline for what should be the same brand promise.</li>
+        <li>This is a genuine cross-channel inconsistency: GBP says one phrase, the website (at least for Motor City) says another, with a typo on top. Recommend Owner B check whether other location pages on the site use "Confidence Promise," "Happiness Guarantee," or something else entirely, and standardize to one phrase everywhere.</li>
+        <li>All 5 GBP descriptions end with a recruitment/hiring blurb ("We're hiring... search Tara Rose careers"). Consistent across the brand — confirmed intentional per the Recruitment Touchpoints tracker (added 9–10 July across all 4 locations), no longer needs an Owner B check.</li>
+        <li><strong>Update (16 July):</strong> Linktree and website checked directly — now a 3-way phrase inconsistency: linktr.ee/tararosesalon's Policies section links a "7-DAY GUARANTEE BY TARA" video (a third distinct tagline); the website's "Our Story" page uses related but different language, not the named phrase.</li>
+        <li><strong>Update (16 July, later):</strong> Instagram bio now shows "linkrt.ee/tararosesalon and 4 more" under Links — Kate added it herself after confirming there was no room left in the 147/150-char bio text; external links sit in a separate panel with its own capacity. Resolves the earlier ambiguity about whether Linktree is the live bio link.</li>
+        <li>Guarantee Story Highlight (Block 5.5 open thread) — now opened and reviewed end to end, oldest (~50 weeks) to newest (1 week). Confirms a visible style evolution: white-background text-first "Client Love" testimonials → black-background video reels. Neither uses the literal phrase "Confidence Promise" or any of the other 3 known phrasings — the highlight title is simply "Guarantee." Closes the open thread; does not resolve the underlying phrase-inconsistency finding (<a class="xref" href="#top-fixes">Top Fix #8</a>).</li>
+      </ul>
+      <h4>5.4 full site check (16 July) — Ctrl+F "confidence promise," incognito</h4>
+      <ul class="plain">
+        <li>Homepage (tararosesalon.com/en/ae/) — 2 matches. Full dedicated section: "The Tara Rose Confidence Promise" heading + body copy naming the 7-day return/adjustment offer. The ONLY page where the phrase actually lives verbatim.</li>
+        <li>Al Quoz, Khalifa City, Mamsha Al Saadiyat location pages — 0 matches each. Motor City — 0 matches (already known to use "7-Day Happiness Guarante[e]" instead).</li>
+        <li>Bahrain — /en/bahrain and /en/bah both 404. No live Bahrain page exists yet. N/A for this check.</li>
+        <li><strong>Bottom line:</strong> bigger gap than a simple "3-way tagline mismatch" — NONE of the 4 live location pages carry the Confidence Promise messaging at all. Only the general homepage does. Raises the priority of <a class="xref" href="#top-fixes">Top Fix #8</a> — it's a content-completeness gap on 3 of 4 location pages, not only a wording issue.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="card-num">#4</span><span class="card-summary-txt"><strong>Local pack ranking &amp; AI search visibility</strong> now tested + new risk flags surfaced</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p>Source: Kate's Week 27 Ops &amp; Performance Report, 29 Jun–5 Jul.</p>
+      <h4>5.2 Local pack — directional read (16 July, "[location] + hair salon")</h4>
+      <ul class="plain">
+        <li>Al Quoz ("hair salon Al Quoz") — TRS #3 of 10, behind Ivy Beauty &amp; Bubbles Marquise Square (#1) and March14 Dubai Beauty Residence (#2).</li>
+        <li>Motor City ("hair salon Motor City UAE") — TRS #3 of 10, behind La Maison de Amelie (#1) and Code Hair Ladies Salon (#2).</li>
+        <li>Khalifa City ("hair salon Khalifa City") — TRS #1 of 10, ahead of Boho Salon (#2).</li>
+        <li>Saadiyat ("hair salon Saadiyat") — TRS #1 of 10, ahead of Ivy Beauty &amp; Bubbles Abu Dhabi (#2).</li>
+        <li>Recurring competitor worth watching: <strong>Ivy Beauty &amp; Bubbles</strong> appears in the top 4 of 3 of 4 locations under slightly different listing names — the most consistent rival across the portfolio.</li>
+        <li>Methodology caveat: run from Kate's phone in the Philippines, not confirmed incognito. Directionally reliable, not a substitute for an on-device UAE test. See <a class="xref" href="#item-5-2">5.2</a> for the authoritative checklist-compliant re-test.</li>
+        <li>Separately, general-search visibility improved: Al Quoz now #1 for "best hair colour salon Al Quoz Dubai" (was invisible); Khalifa City now top pick for "best hair salon Khalifa City Abu Dhabi" (was directory-only); Mamsha Al Saadiyat now #1 for "best hair salon Saadiyat Abu Dhabi" (was no mention); Motor City steady at 3rd of 5.</li>
+      </ul>
+      <h4>5.3 AI search visibility — baseline log across ChatGPT/Perplexity/Gemini</h4>
+      <ul class="plain">
+        <li>"best hair colour salon Al Quoz Dubai" ✅ appears ("Best Salon in Al Quoz"); "best hair salon Saadiyat Abu Dhabi" ✅ appears ("#1 recommendation," flagship/largest salon).</li>
+        <li>"best hair colour correction Abu Dhabi" ❌ not featured (Sisters Beauty Lounge, Boho Salon, Aphrodite Beauty named instead); "best balayage Dubai" ❌ not featured (Hush, Amro, Chalk, Sisters named — though the Harper's Bazaar list ranking TRS 9/10 is still indexed).</li>
+      </ul>
+      <p>Bonus data point: Gemini's Al Quoz answer describes the guarantee as a "7-day service satisfaction guarantee" — a <strong>4th</strong> distinct phrasing, on top of GBP's, Motor City's, and Linktree's. Suggests the inconsistency is already baked into AI-crawled site content. New flag: "Specialist hair colourist Dubai" — an AI search that used to include TRS dropped it entirely this week; worth re-checking if it's a trend.</p>
+      <p>New flags carried over from Week 27, not yet reflected elsewhere: (a) video-verification suspension risk on all 4 GBP profiles — status needs confirming; (b) P0 NAP errors — wrong phone numbers actively misdirecting clients across 2GIS, Property Finder Blog, Google Play/TRS app, Yango Maps, Facebook; (c) a competitor claiming colour-correction leadership specifically in Khalifa City; (d) a 5-star review from "Jomon Jomon" (Jul 5, Saadiyat) reads spam-like — worth checking before counting toward review velocity; (e) a customer complaint about the front desk not opening on time at 10am, not currently tracked in this audit; (f) GBP owner/profile photo staleness worse than documented — Al Quoz and Motor City ~26 months old (all 4 over the 3-month target). None of the 28 master fix tracker items were touched during Week 27 — team focus was recruitment/SMM/Front Desk Manual instead.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="card-num">#5</span><span class="card-summary-txt"><strong>GA4 tracking</strong> — firing, but to the wrong property, and the fix can't go live yet</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Root cause:</strong> the site's live GTM container (GTM-N6KPVCNF, hardcoded in the theme file inc/analytics-pixels.php via the wp_head hook) is actively firing and sending real pageview hits — but to the wrong GA4 property (G-4QX6GCJM8K) instead of the business's actual property, "Tara Rose Hair and Beauty" (G-7W4EZVYKJV). That's why nothing was reaching DebugView for the correct property even though tracking was technically working.</p>
+      <p><strong>Access gap:</strong> the Google account with GA4 access does NOT have edit rights to the GTM-N6KPVCNF container itself — appears managed separately, possibly by a prior developer/agency. A separate, correctly-configured Google tag (gtag.js, G-7W4EZVYKJV / GT-NC6LBV5) exists and is accessible, but was never installed on the live site — GA4's own diagnostics flagged it "Urgent," not detected in 48+ hours.</p>
+      <p><strong>Workaround attempted:</strong> confirmed the site is hosted on WordPress, then added the correct gtag.js snippet directly into inc/analytics-pixels.php, alongside the existing broken GTM code, without removing anything. The edit saved successfully and was confirmed present in the saved file.</p>
+      <p><strong>Blocked at:</strong> even after a full LiteSpeed cache purge (including QUIC.cloud queue clearing) and an opcode cache purge, fresh cache-bypassed requests still returned the old output without the new tag — pointing to a server-level caching or PHP OPcache layer not clearable from the WordPress dashboard alone.</p>
+      <p><strong>Status: UNRESOLVED.</strong> The fix is staged and saved correctly at the code level but isn't yet reflected live. Resolving this will likely need server/hosting-level access. Recommend flagging to whoever manages the hosting/server infrastructure. See <a class="xref" href="#item-3-1">3.1</a>.</p>
+    </div>
+  </details>
+
+  <details class="card fail-open" open>
+    <summary><span class="card-num">#6</span><span class="card-summary-txt"><strong>"Janabiyah Quiz Hijack"</strong> — CRITICAL (found via 3.5 Mobile Session Review)</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p>A full CSV export of 300 Clarity recordings (237 unique sessions) was reviewed for 3.5 in place of the checklist's literal Page=/booking filter, since no /booking page exists on the site. On /en/bh/locations/janabiyah/, a giveaway/quiz popup takes over the page almost immediately on load in 11 of roughly 15 sessions reviewed in detail — every affected session has only 1 page view, meaning users never reach real location or booking content. Traffic is mostly UK-based (Instagram link-in-bio and Linktree), which points to likely internal QA testing rather than lost real leads — but the bug itself is independently reproducible: users rage-click or dead-click 6 to 8 times on non-responsive banner elements in the first 5–15 seconds before the quiz form engages, then get funneled into a multi-step quiz ending in a phone-number capture field, with no confirmed Submit in any sampled recording.</p>
+      <p>Also found on AE pages during the same review: a recurring "Can't find variable: beTracker" console error (4 sessions) — likely a broken or missing analytics/marketing script, cross-ref <a class="xref" href="#item-1-6">1.6</a> — and a pattern of high-intent users on the Abu Dhabi location pages repeatedly tapping Book Now/Chat 4–5 times in one session without a visibly confirmed booking, worth a manual video watch alongside <a class="xref" href="#item-4-2">4.2</a>/<a class="xref" href="#item-4-5">4.5</a>.</p>
+      <p>Owner: A (dev) — Est: urgent for the popup, since it fully blocks location/booking access on that page. Full detail in <a class="xref" href="#item-3-5">3.5</a>.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="card-num">#7</span><span class="card-summary-txt">Full Screaming Frog crawl (1.4/1.5) + UTM tagging audit (4.1) completed — confirms and scales up earlier findings</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p>The full crawl (471/471 URLs, 100%) confirms 14 real 404s, all Bahrain /en/bh/services/... pages, and 7 unique 2-hop redirect chains tracing to the same /en/ae/ locale migration already flagged. Site-wide image audit: 28 of 90 images (31%) missing alt text, 7 over 200KB, 0 in WebP/AVIF. Separately, the 1.3b Search Console indexing drilldown triaged the much larger 118-redirect / 24-404 set down to individual URLs: ~78 of the 118 redirects share the same 2-hop chain root cause at far greater scale, and a new, previously undocumented group of 7 Arabic (/ar/) locale stub URLs surfaced — flag to Owner A/Tara on whether an Arabic site is planned. UTM audit (4.1): of 221 external links, only 2 carry any UTM (both Instagram's own auto-generated embed params) — effectively 0 of 221 have genuine marketing tagging, including the brand's own Facebook/Instagram profile links and the wa.me/wa.link WhatsApp booking CTAs, which removes any way to attribute which page/source drives a WhatsApp booking lead.</p>
+      <p>Owner: A (crawl/redirect fixes), B (UTM tagging) — Est: 2–3 hrs for the redirect-link cleanup, 30–45 min to tag the WhatsApp CTAs first. Full detail in <a class="xref" href="#item-1-4">1.4</a>, <a class="xref" href="#item-1-5">1.5</a>, <a class="xref" href="#item-1-3b">1.3b</a>, and <a class="xref" href="#item-4-1">4.1</a>.</p>
+    </div>
+  </details>
+</section>
+
+<section id="top-fixes" class="block-section">
+  <h2>Top 5 Fixes, Ranked by Impact <span class="block-count">(updated)</span></h2>
+  <ol class="top-fix-list" style="list-style:none;">
+    <li class="top-fix-item"><span class="n">1.</span>Zero LocalBusiness or Service schema anywhere on the site.<span class="owner-tag">Owner: A · Est: 2–3 hrs · see <a class="xref" href="#item-2-3">2.3</a></span></li>
+    <li class="top-fix-item"><span class="n">2.</span>"Book Now" opens a chat widget instead of a Phorest deep link — AND the widget's submit is currently broken.<span class="owner-tag">Owner: A · Est: urgent fix + follow-up decision on chat-first vs direct booking · see <a class="xref" href="#item-4-6">4.6</a></span></li>
+    <li class="top-fix-item"><span class="n">3.</span>56 of 60 homepage images have empty alt text.<span class="owner-tag">Owner: B/A · Est: 2 hrs · see <a class="xref" href="#item-1-5">1.5</a></span></li>
+    <li class="top-fix-item"><span class="n">4.</span>tararosesalon.com/sitemap.xml returns 404 (real sitemap lives at /en/sitemap_index.xml).<span class="owner-tag">Owner: A · Est: 15 min · see <a class="xref" href="#item-2-5">2.5</a></span></li>
+    <li class="top-fix-item"><span class="n">5.</span>Lexicon violations in live copy — "guarantee" (homepage), "premium"/"upsell" (Mamsha Al Saadiyat).<span class="owner-tag">Flag to Owner B/Tara: approved exception or rewrite? · see <a class="xref" href="#item-2-2">2.2</a></span></li>
+    <li class="top-fix-item"><span class="n">6.</span>NEW — Search Console Indexing shows 227 pages with issues vs. only 97 indexed. Biggest chunk: 118 pages with redirects.<span class="owner-tag">Owner: A · Est: 1–2 hrs · see <a class="xref" href="#item-1-3b">1.3b</a></span></li>
+    <li class="top-fix-item"><span class="n">7.</span>NEW — Bahrain GBP listing has compounding issues: hours entered but not displaying publicly, posting turned off, stale "opening January" copy, Facebook tracking ID baked into the saved Website URL.<span class="owner-tag">Owner: C (GBP) + Tara · Est: 30–60 min + possible support ticket · see <a class="xref" href="#item-5-1">5.1</a></span></li>
+    <li class="top-fix-item"><span class="n">8.</span>NEW — Confidence Promise messaging missing from 3 of 4 location pages, and inconsistent everywhere else it appears (4 different phrasings across the brand).<span class="owner-tag">Owner: B · Est: 45–60 min · see <a class="xref" href="#item-5-4">5.4/5.5</a></span></li>
+    <li class="top-fix-item"><span class="n">9.</span>RESOLVED (17 July) — Old logo asset on Facebook. All 4 branch pages were showing the old circular cream/pink badge logo instead of the current black wordmark. Kate updated all 4 profile pictures live.
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View before/after logo evidence</summary>
+        <div class="evi-body">
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/fb_saadiyat_before.png" alt="Mamsha Al Saadiyat Facebook page — old logo"><div class="cap"><strong>Mamsha Al Saadiyat — before.</strong> Old cream/pink badge logo.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_saadiyat_after.png" alt="Mamsha Al Saadiyat Facebook page — new logo"><div class="cap"><strong>Mamsha Al Saadiyat — after.</strong> New black wordmark logo.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_khalifa_before.png" alt="Khalifa City A Facebook page — old logo"><div class="cap"><strong>Khalifa City A — before.</strong></div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_khalifa_after.png" alt="Khalifa City A Facebook page — new logo"><div class="cap"><strong>Khalifa City A — after.</strong></div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_alquoz_before.png" alt="Al Quoz Facebook page — old logo"><div class="cap"><strong>Al Quoz — before.</strong></div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_alquoz_after.png" alt="Al Quoz Facebook page — new logo"><div class="cap"><strong>Al Quoz — after.</strong></div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_motorcity_before.png" alt="Motor City Facebook page — old logo"><div class="cap"><strong>Motor City — before.</strong> Caught during this fix, not in the original 2-branch finding.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_motorcity_after.png" alt="Motor City Facebook page — new logo"><div class="cap"><strong>Motor City — after.</strong></div></div>
+          </div>
+          <p style="margin-top:12px;">Still to check: GBP profile photos per location, Instagram profile pic, website favicon.</p>
+        </div>
+      </div>
+      <span class="owner-tag">Resolved 17 July</span>
+    </li>
+    <li class="top-fix-item"><span class="n">10.</span>NEW (17 July) — Facebook page structure: unbranded parent page carries a NAP inconsistency. Beyond the 4 branch-specific pages, there's a 5th, unbranded "Tara Rose Salon" page (facebook.com/tararosesalon) with 25K followers — by far the most-followed and most-active FB presence for the brand, using a distinct "TARA ROSE SALONS" (plural) ring logo. Its bio reads "Four salons across Dubai &amp; Abu Dhabi," correctly implying a multi-location brand — but its About → Details → Address field is hardcoded to a single branch (Arenco Warehouse 10, Al Quoz). Ties directly into the P0 NAP errors already flagged in the Week 27 Ops Report. Recommend Owner B/Tara decide: clear the address field, or use Facebook's Locations/Store Locations feature to list all 4 branches properly.
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View NAP inconsistency evidence</summary>
+        <div class="evi-body">
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/fb_parent_page.png" alt="Parent Tara Rose Salon Facebook page"><div class="cap">facebook.com/tararosesalon — 25K followers, "Four salons across Dubai &amp; Abu Dhabi" bio, distinct "TARA ROSE SALONS" ring logo. Most-followed and most-active FB presence for the brand.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_parent_address_nap.png" alt="Parent Facebook page address field hardcoded to Al Quoz"><div class="cap">About → Details → Address on the same parent page — hardcoded to Al Quoz (Arenco Warehouse 10), despite representing all 4 branches. The NAP inconsistency.</div></div>
+          </div>
+        </div>
+      </div>
+      <span class="owner-tag">Owner: B · Est: 15–30 min to fix the field; longer if switching to a proper multi-location setup</span>
+    </li>
+    <li class="top-fix-item"><span class="n">11.</span>NEW (17 July) — "Janabiyah Quiz Hijack": popup takes over /en/bh/locations/janabiyah/ on load, blocking access in 11 of ~15 sampled sessions. Likely internal QA traffic, but independently reproducible.<span class="owner-tag">Owner: A, urgent · see <a class="xref" href="#item-3-5">3.5</a></span></li>
+    <li class="top-fix-item"><span class="n">12.</span>NEW (17 July) — Recurring "Can't find variable: beTracker" console error on multiple AE service/hair pages, likely a broken analytics/marketing script.<span class="owner-tag">Owner: A · Est: 30–60 min to trace · cross-ref <a class="xref" href="#item-1-6">1.6</a>, <a class="xref" href="#item-4-3">4.3</a></span></li>
+    <li class="top-fix-item"><span class="n">13.</span>NEW (17 July, via 1.3b) — ~78 of the 118 Search Console redirect URLs share one root cause: a 2-hop chain through "/education/beauty-insights/". Also: 7 unexplained Arabic (/ar/) locale stubs, and staging.tararosesalon.com is indexed by Google and should be noindexed/password-protected.<span class="owner-tag">Owner: A · Est: 1–2 hrs redirect cleanup, 15 min staging fix · see <a class="xref" href="#item-1-3b">1.3b</a></span></li>
+    <li class="top-fix-item"><span class="n">14.</span>NEW (17 July, via 4.1) — 0 of 221 external links carry genuine marketing UTM tagging, including the WhatsApp booking CTAs — no way to attribute which page/source drives a WhatsApp lead.<span class="owner-tag">Owner: B · Est: 30–45 min to tag the WhatsApp links first · see <a class="xref" href="#item-4-1">4.1</a></span></li>
+  </ol>
+</section>
+
+<section id="block-1" class="block-section">
+  <h2>Block 1 — Technical Health <span class="block-count">(9 items)</span></h2>
+  <div class="block-actions">
+    <button class="btn-mini" data-expand="block-1-items">Expand All</button>
+    <button class="btn-mini" data-collapse="block-1-items">Collapse All</button>
+  </div>
+  <div id="block-1-items">
+
+  <details class="card" id="item-1-1">
+    <summary><span class="card-num">1.1</span><span class="card-summary-txt">PageSpeed (mobile, field data)</span><span class="pill pass">DONE — PASS</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Real-user CrUX data (28-day, UAE-majority traffic): LCP 1.6s mobile / 1.9s desktop, INP 113ms / 47ms, CLS 0 / 0.02. All origin-wide (CrUX has insufficient per-page data, falls back to site aggregate). Home page also scored via lab test: LCP 1.9s (US-West lab) / 1.6s (field, mobile) — pass.</p>
+      <p><strong>Why it matters:</strong> LCP/CLS/INP are direct Google ranking factors and the biggest driver of mobile bounce rate.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View live PageSpeed Insights links</summary>
+        <div class="evi-body">
+          <ul class="plain">
+            <li>Home: <a class="link-ext" href="https://pagespeed.web.dev/analysis/https-www-tararosesalon-com-en-ae/x5juigqa3o?form_factor=mobile" target="_blank" rel="noopener">pagespeed.web.dev — Home (mobile)</a></li>
+            <li>Services / Menu / Pricing: <a class="link-ext" href="https://pagespeed.web.dev/analysis/https-www-tararosesalon-com-en-ae-services/01qfbx98in?form_factor=mobile" target="_blank" rel="noopener">pagespeed.web.dev — Services (mobile)</a></li>
+            <li>Contact: <a class="link-ext" href="https://pagespeed.web.dev/analysis/https-www-tararosesalon-com-en-ae-contact/9q1iqpn8ms?form_factor=mobile" target="_blank" rel="noopener">pagespeed.web.dev — Contact (mobile)</a></li>
+            <li>Locations: <a class="link-ext" href="https://pagespeed.web.dev/analysis/https-www-tararosesalon-com-en-ae-locations/ei2ngma5ju?form_factor=desktop" target="_blank" rel="noopener">pagespeed.web.dev — Locations (desktop)</a></li>
+          </ul>
+          <p style="font-size:12px;color:var(--faint);">Some of these free-tier links may expire or need a fresh run after a period of time.</p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card" id="item-1-2">
+    <summary><span class="card-num">1.2</span><span class="card-summary-txt">Lighthouse (mobile, per-page)</span><span class="pill partial">PARTIAL — 3 PASS / 1 FAIL / 1 tied to Home</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Home: 96/90/100/100 — PASS. Services page: 87/95/100/100 — FAILS on Performance (LCP 3.6–4s in US/EU regions vs 1.3s in Asia — points to CDN/caching, not page weight; only 588KB/12 requests). Locations page (/en/ae/locations/) now tested: 97/95/100/100 — PASS, LCP 1.2s (US-East)–1.7s (Australia). Contact page (/en/ae/contact/) now tested: 90/94/96/100 — PASS on aggregate, but flagged: LCP 3.4–3.5s on US West &amp; Australia specifically (vs 1.3–1.8s elsewhere), above the 2.5s LCP pass bar from 1.1 even though the aggregate score clears ≥90. Booking page redirects to/mirrors Home — no independent report exists; it inherits Home's score once logged, status PENDING on that link only.</p>
+      <p><strong>Why it matters:</strong> one combined score for performance, accessibility, best practices and SEO — fastest gut-check on page health.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View full per-page Lighthouse breakdown</summary>
+        <div class="evi-body">
+          <p>Two additional Lighthouse Metrics reports were pulled to complete the four-page requirement. Note: the original link labels were swapped in an earlier pass — corrected below based on the actual URL returned by each report.</p>
+          <p><strong>1.2 — Locations page (/en/ae/locations/): PASS</strong></p>
+          <div class="tbl-wrap"><table><thead><tr><th>Metric</th><th>Result</th></tr></thead><tbody>
+            <tr><td>Performance</td><td>97</td></tr><tr><td>Accessibility</td><td>95</td></tr><tr><td>Best Practices</td><td>100</td></tr><tr><td>SEO</td><td>100</td></tr><tr><td>LCP range across regions</td><td>1.2s (US-East) – 1.7s (Australia)</td></tr>
+          </tbody></table></div>
+          <p><strong>1.2 — Contact page (/en/ae/contact/): PASS (with flag)</strong></p>
+          <div class="tbl-wrap"><table><thead><tr><th>Metric</th><th>Result</th></tr></thead><tbody>
+            <tr><td>Performance</td><td>90</td></tr><tr><td>Accessibility</td><td>94</td></tr><tr><td>Best Practices</td><td>96</td></tr><tr><td>SEO</td><td>100</td></tr><tr><td>LCP flag</td><td>3.4s–3.5s on US West &amp; Australia specifically (vs 1.3–1.8s elsewhere) — above the 2.5s LCP pass bar from 1.1, even though the aggregate score still clears ≥90</td></tr>
+          </tbody></table></div>
+          <p>Booking page: redirects to/mirrors the Home page — no independent Lighthouse report was generated. Cannot be scored separately; inherits Home's score once that number is logged. Status: PENDING.</p>
+          <p style="margin-top:14px;"><strong>Live Lighthouse Metrics links:</strong></p>
+          <ul class="plain">
+            <li>Home: <a class="link-ext" href="https://lighthouse-metrics.com/lighthouse/checks/e1a526d0-2fab-4dd2-8407-a55f13a9bb45" target="_blank" rel="noopener">lighthouse-metrics.com — Home</a></li>
+            <li>Services / Menu / Pricing: <a class="link-ext" href="https://lighthouse-metrics.com/lighthouse/checks/af62e939-8318-48cb-8728-1cc0ce719a61" target="_blank" rel="noopener">lighthouse-metrics.com — Services</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card" id="item-1-2b">
+    <summary><span class="card-num">1.2b</span><span class="card-summary-txt">WebPageTest (supplementary, Tokyo node — closest available to UAE)</span><span class="pill pass">PASS (soft flag)</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Homepage: LCP 1.8s, CLS 0.049, TBT 0ms — all pass. TTFB 1,018ms is slightly above the 0.8s "good" mark; Speed Index 4.29s is on the slower side. No UAE-specific test node exists on free tools; this + CrUX field data are the closest available proxies.</p>
+      <p><strong>Why it matters:</strong> TTFB reflects server/CDN response time before rendering even starts — worth a look given schema/alt-text work is already queued for dev.</p>
+      <p><a class="link-ext" href="https://www.catchpoint.com/webpagetest/results?publicurl=https%3A%2F%2Fpublic.catchpoint.com%2FUI%2FEntry%2FWPTITP%2FARGJ-D-E-B2ADBMxje4s0t7wAA-N" target="_blank" rel="noopener">WebPageTest — Home page result (Tokyo node)</a></p>
+    </div>
+  </details>
+
+  <details class="card" id="item-1-3a">
+    <summary><span class="card-num">1.3a</span><span class="card-summary-txt">Search Console — Core Web Vitals</span><span class="pill pass">PASS</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Mobile: 0 poor, 0 needs improvement, 40 good URLs. Desktop: same — 0/0/40. Historical graph shows poor/needs-improvement URLs present in April, fully resolved by June. Last updated 7/14/26.</p>
+      <p><strong>Why it matters:</strong> Google's own field-data view of page experience — complements CrUX/PageSpeed data with Google's direct assessment.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View Core Web Vitals report screenshots</summary>
+        <div class="evi-body">
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/gsc-cwv-mobile.png" alt="Search Console Core Web Vitals report, mobile"><div class="cap">Core Web Vitals report, Mobile: 0 poor URLs, 0 needs improvement, 40 good URLs as of 7/14/26. Historical dip in April/May fully recovered by June.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/gsc-cwv-desktop.png" alt="Search Console Core Web Vitals report, desktop"><div class="cap">Core Web Vitals report, Desktop: same clean result — 0 poor, 0 needs improvement, 40 good URLs.</div></div>
+          </div>
+          <p style="margin-top:12px;">Requires kate@tararosesalon.com login. <a class="link-ext" href="https://search.google.com/search-console/core-web-vitals?resource_id=sc-domain%3Atararosesalon.com" target="_blank" rel="noopener">Core Web Vitals report</a> · <a class="link-ext" href="https://search.google.com/search-console?resource_id=sc-domain:tararosesalon.com" target="_blank" rel="noopener">Overview / Performance</a></p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-1-3b" open>
+    <summary><span class="card-num">1.3b</span><span class="card-summary-txt">Search Console — Indexing/Pages</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> 227 pages with issues vs. 97 indexed. Breakdown: 118 page with redirect, 40 crawled-not-indexed, 38 excluded by noindex tag, 24 not found (404), 6 discovered-not-indexed, 1 blocked (4xx). Both the 118 and the 24 have now been triaged down to individual URLs (17 July): of the 24 404s, 12 are real orphaned/broken pages (priority: a staging site, staging.tararosesalon.com, is indexed by Google), 5 are wildcard/pattern artifacts (ignore), 4 are old recruitment PDFs (verify), 3 are Bahrain service pages (pending Tara/Owner decision). Of the 118 redirects, ~78 share one root cause — a 2-hop chain through a middle "/education/beauty-insights/" URL before reaching the final page — same pattern Screaming Frog found at smaller scale (7 chains, see <a class="xref" href="#item-1-4">1.4</a>); ~36 are expected single-hop migration redirects (no action); 7 are unexplained Arabic (/ar/) locale stubs (new finding, flag to Owner A/Tara); 1 Bahrain, 2 misc.</p>
+      <p><strong>Why it matters:</strong> High redirect/404 counts waste crawl budget and can suppress indexing of pages that should rank. See <a class="xref" href="#top-fixes">Top Fix #6</a>.</p>
+
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View full URL breakdown / triage tables</summary>
+        <div class="evi-body">
+          <p>Source: Search Console → Indexing → Pages, property tararosesalon.com. Coverage summary export (7/17) + two URL-level drilldown exports ("Page with redirect" and "Not found (404)"). Compiled 17 July 2026.</p>
+          <p><strong>"Not Found (404)" — 24 URLs Triaged</strong></p>
+          <div class="tbl-wrap"><table><thead><tr><th>Group</th><th>Count</th><th>Examples</th><th>Verdict</th></tr></thead><tbody>
+            <tr><td>A — Wildcard/pattern artifacts</td><td>5</td><td>/en/*, /wp-*.php, /wp-content/themes/*</td><td>Not real pages — ignore, no fix needed</td></tr>
+            <tr><td>B — Bahrain service pages</td><td>3</td><td>/en/bh/services/hands-feet/, /face/, /body/</td><td>Known issue — pending Tara/Owner decision (restore vs. remove)</td></tr>
+            <tr><td>C — Old recruitment PDFs</td><td>4</td><td>SENIOR-STYLIST.pdf, STYLIST.pdf, etc.</td><td>Likely intentional cleanup — verify no live link still points here</td></tr>
+            <tr><td>D — Real broken/orphaned pages</td><td>12</td><td>Staging site (indexed!), old SEO landing pages, /septem, blog pagination, RSS feed</td><td>Actionable — see notes below</td></tr>
+          </tbody></table></div>
+          <p><strong>Group D detail — the real action items</strong></p>
+          <ul class="plain">
+            <li>Staging site indexed by Google (staging.tararosesalon.com/.../manicures/) — flag to dev directly: staging should be noindexed or password-protected. Separate fix from any redirect work.</li>
+            <li>Old SEO landing pages (hair-and-beauty-salon-in-abu-dhabi/, hair-salon-in-al-bateen/, massage-and-facial(s)-in-abu-dhabi/) — check Screaming Frog "Inlinks" tab per URL; redirect to current equivalent if still linked internally, otherwise safe to ignore.</li>
+            <li>Blog pagination (/category/blog/page/2/, /page/3/) and tag/feed URLs — low priority, likely from an old blog structure no longer in use.</li>
+            <li>email.sales.tararosesalon.com — different subdomain (email/marketing tool), not the main site — no action on tararosesalon.com itself.</li>
+          </ul>
+          <p><strong>"Page with Redirect" — 118 URLs Triaged</strong></p>
+          <div class="tbl-wrap"><table><thead><tr><th>Group</th><th>Count</th><th>Examples</th><th>Verdict</th></tr></thead><tbody>
+            <tr><td>A — Domain/protocol normalization</td><td>~5</td><td>http→https, non-www→www, bare domain</td><td>Expected — ignore</td></tr>
+            <tr><td>B — Old /ae/ pages (missing /en/ prefix)</td><td>~31</td><td>/ae/services/, /ae/pricing/, /ae/careers/</td><td>Expected single-hop migration redirect — no new action</td></tr>
+            <tr><td>C — 2-hop chain pattern (old slug → beauty-insights slug → final URL)</td><td>~78</td><td>/celebrate-with-us/ AND /education/beauty-insights/celebrate-with-us/ both listed separately</td><td>ACTIONABLE — same root cause as the 7 chains Screaming Frog found, much larger in volume. Fix internal links to point straight to final URL and collapse to 1 hop.</td></tr>
+            <tr><td>D — Arabic locale stubs (/ar/...)</td><td>7</td><td>/ar/ae/services/hair/colour/, /ar/*, /ar/ae/wellness/</td><td>NEW FINDING — not previously documented. Flag to Owner A/Tara: is an Arabic site planned, or are these stray stubs to clean up?</td></tr>
+            <tr><td>E — Bahrain</td><td>1</td><td>/en/bh/locations/janabiyah</td><td>Known issue — same as Group B in the 404 list</td></tr>
+            <tr><td>F — Misc</td><td>2</td><td>pricelist-stylist.pdf, /feed/</td><td>Low priority — verify PDF is current</td></tr>
+          </tbody></table></div>
+          <p><strong>Group C detail — the priority fix</strong></p>
+          <ul class="plain">
+            <li>The biggest chunk of the 118 (~78 URLs) is not simple single-hop redirect noise — it's dozens of old blog/promo URLs chaining through a middle "/education/beauty-insights/[slug]" step before reaching the final /en/education/beauty-insights/[slug] URL.</li>
+            <li>This is the same underlying issue Screaming Frog already flagged as "7 redirect chains, all 2-hop" — this drilldown shows the true scale is much bigger.</li>
+            <li>Fix: update internal links (in old blog content, any remaining nav/sitemap references) to point directly to the final URL, removing the middle hop across this whole batch.</li>
+          </ul>
+          <p><strong>Recommended Next Steps (from the 1.3b compile)</strong></p>
+          <ul class="plain">
+            <li>Priority 1 — Confirm staging.tararosesalon.com is not meant to be public; add noindex or password-protect. (Owner A)</li>
+            <li>Priority 2 — Update internal links behind the ~78-URL 2-hop chain pattern so they point straight to the final /en/education/beauty-insights/... URL. (Owner A)</li>
+            <li>Priority 3 — Confirm with Tara/Owner B whether an Arabic (/ar/) site is planned; if not, these 7 stubs can be left as-is or cleaned up. (Owner B + Tara)</li>
+            <li>Priority 4 — Confirm Bahrain service-page and location decision (restore vs. remove) — same call needed for both the 404 and redirect Bahrain entries. (Tara/Owner A)</li>
+            <li>Lower priority — verify old SEO landing pages and recruitment PDFs have no remaining internal links pointing to them; if none, no action needed.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View raw coverage export + indexing trend</summary>
+        <div class="evi-body">
+          <p>The full Indexing → Pages coverage report (source of the 227-issues-vs-97-indexed breakdown) was exported directly from Search Console and is attached as a companion file: <code>tararosesalon_com-Coverage-2026-07-16.xlsx</code>. It contains three sheets — Chart (daily indexed/not-indexed trend since April), Critical issues (the reason-by-reason breakdown below), and Non-critical issues (currently empty, zero rows). Open the attached file directly for exact URL-level detail when investigating the 118 redirect pages.</p>
+          <p><strong>Critical issues — full breakdown (as of 7/16/26)</strong></p>
+          <div class="tbl-wrap"><table><thead><tr><th>Reason</th><th>Source</th><th>Validation</th><th>Pages</th></tr></thead><tbody>
+            <tr><td>Page with redirect</td><td>Website</td><td>Not Started</td><td>118</td></tr>
+            <tr><td>Crawled – currently not indexed</td><td>Google systems</td><td>Not Started</td><td>40</td></tr>
+            <tr><td>Excluded by 'noindex' tag</td><td>Website</td><td>Not Started</td><td>38</td></tr>
+            <tr><td>Not found (404)</td><td>Website</td><td>Not Started</td><td>24</td></tr>
+            <tr><td>Discovered – currently not indexed</td><td>Google systems</td><td>Not Started</td><td>6</td></tr>
+            <tr><td>Blocked due to other 4xx issue</td><td>Website</td><td>Not Started</td><td>1</td></tr>
+            <tr><td>Blocked due to access forbidden (403)</td><td>Website</td><td>N/A</td><td>0</td></tr>
+            <tr><td>Blocked by robots.txt</td><td>Website</td><td>N/A</td><td>0</td></tr>
+            <tr><td>Alternate page with proper canonical tag</td><td>Website</td><td>N/A</td><td>0</td></tr>
+          </tbody></table></div>
+          <p>Total: 227 pages with issues vs. 97 pages currently indexed. "Validation: Not Started" means Google has flagged these but no fix has been submitted for re-crawl yet — that's the next step once Owner A addresses the underlying cause.</p>
+          <p><strong>Indexed vs. Not-indexed trend (selected dates from Chart sheet)</strong></p>
+          <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Not Indexed</th><th>Indexed</th><th>Impressions</th></tr></thead><tbody>
+            <tr><td>4/17/26 (earliest)</td><td>170</td><td>94</td><td>1,308</td></tr>
+            <tr><td>5/5/26</td><td>219</td><td>71</td><td>971</td></tr>
+            <tr><td>6/2/26 (mid-range)</td><td>see file</td><td>see file</td><td>see file</td></tr>
+            <tr><td>7/10/26 (latest)</td><td>227</td><td>97</td><td>1,439</td></tr>
+          </tbody></table></div>
+          <p>Note: "not indexed" is trending up slightly alongside impressions also trending up — worth watching but not necessarily alarming on its own; the redirect/404 breakdown above is the more actionable signal.</p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card" id="item-1-3c">
+    <summary><span class="card-num">1.3c</span><span class="card-summary-txt">Search Console — Mobile Usability</span><span class="pill na">N/A</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Report deprecated by Google; folded into Core Web Vitals. No separate check remains — see <a class="xref" href="#item-1-3a">1.3a</a>.</p>
+      <p><strong>Why it matters:</strong> Historical checklist item; superseded by Google's own product changes.</p>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-1-4" open>
+    <summary><span class="card-num">1.4</span><span class="card-summary-txt">Crawl — 4xx/redirects</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Full crawl now complete: 471/471 URLs (100%), 250 internal URLs. 14 real 4xx (all Bahrain /en/bh/services/... 404s, same root cause as the 1.3b group). 26 "5xx" are false positives (twitter.com share links blocked as a bot, not a site issue). 7 unique redirect chains found, all exactly 2-hop, tracing to the same /en/ae/ locale migration — no loops, no deeper chains. Root cause shared with 4xx: internal links never updated after the locale migration.</p>
+      <p><strong>Why it matters:</strong> Broken links and multi-hop redirects waste crawl budget and erode trust at a dead end.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View full Screaming Frog crawl detail</summary>
+        <div class="evi-body">
+          <p>Crawl completed: 471 of 471 URLs (100%). 250 internal URLs total — 156 HTML, 90 Images, 3 JavaScript, 1 CSS.</p>
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/sf-crawl-overview.png" alt="Screaming Frog crawl overview, 100% complete"><div class="cap">Fig. 1 — Screaming Frog crawl overview, 100% complete, 250 internal URLs.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/sf-4xx-response-codes.png" alt="Screaming Frog Response Codes tab filtered to Client Error 4xx"><div class="cap">Fig. 2 — Response Codes tab filtered to Client Error (4xx), 14 results.</div></div>
+          </div>
+          <p style="margin-top:12px;"><strong>Client Errors (4xx) — 14 found.</strong> All 14 are 404 Not Found, and all fall under the same path structure: /en/bh/services/... (Bahrain locale service pages).</p>
+          <div class="tbl-wrap"><table><thead><tr><th>#</th><th>URL (path)</th></tr></thead><tbody>
+            <tr><td>1</td><td>/en/bh/services/hair/packages/</td></tr>
+            <tr><td>2</td><td>/en/bh/services/face/facial-treatments/</td></tr>
+            <tr><td>3</td><td>/en/bh/services/hands-feet/pedicures/</td></tr>
+            <tr><td>4</td><td>/en/bh/services/hands-feet/</td></tr>
+            <tr><td>5</td><td>/en/bh/services/hands-feet/manicures/</td></tr>
+            <tr><td>6</td><td>/en/bh/services/hair/treatments/</td></tr>
+            <tr><td>7</td><td>/en/bh/services/hair/colour/copper/</td></tr>
+            <tr><td>8</td><td>/en/bh/services/face/</td></tr>
+            <tr><td>9</td><td>/en/bh/services/face/eyes-brows/</td></tr>
+            <tr><td>10</td><td>/en/bh/services/body/</td></tr>
+            <tr><td>11</td><td>/en/bh/services/hair/extensions/</td></tr>
+            <tr><td>12</td><td>/en/bh/services/hair/home-care-treatments/</td></tr>
+            <tr><td>13</td><td>/en/bh/services/body/waxing/</td></tr>
+            <tr><td>14</td><td>/en/bh/services/body/massage/</td></tr>
+          </tbody></table></div>
+          <p style="margin-top:14px;"><strong>Server Errors (5xx) — 26 found, all false positives.</strong> All 26 are http://twitter.com/share?url=... — external Twitter/X share-button links embedded in blog posts, not pages on tararosesalon.com. Status 520 is Cloudflare's generic error, returned here because Twitter/X is blocking Screaming Frog's crawler as a bot — this does not reflect a problem with the TRS site itself.</p>
+          <p><strong>Redirect Chains (&gt; 1 hop) — 7 unique chains found.</strong> All chains are exactly 2 hops (none deeper), no loops. Two repeating patterns, both tracing back to the same root cause as the 404s above: a locale-prefix (/en/ae/) migration where old internal links were never updated.</p>
+          <div class="tbl-wrap"><table><thead><tr><th>Pattern</th><th>Example chain</th></tr></thead><tbody>
+            <tr><td>A — bare domain → /en/ → /en/ae/</td><td>tararosesalon.com/ → (301) → www.tararosesalon.com/en/ → (302) → www.tararosesalon.com/en/ae/ (200)</td></tr>
+            <tr><td>B — pre-locale blog URL → adds /en/</td><td>tararosesalon.com/roses-magazine → (301) → .../education/beauty-insights/ → (301) → .../en/education/beauty-insights/ (200)</td></tr>
+          </tbody></table></div>
+          <p>7 unique chain destinations affected: bare tararosesalon.com/, bare www.tararosesalon.com/, /roses-magazine, /roses-magazine/, /welcome-back/, /nail-care-salon-in-abu-dhabi/, /summer-offers/ — several hit repeatedly by different internal blog-post links (e.g. /summer-offers/ is the chain target for 3 separate source links).</p>
+          <p>Root cause (shared): site migrated to the /en/ae/ locale URL structure, but internal links inside blog content and old service paths were never updated — same underlying cause behind both the 404s and the redirect chains. Fix direction: update internal links in the content itself (not just add server-side redirects) so they point directly to the final /en/... URL, reducing hops. For the /bh/services/ 404s specifically: decide whether the Bahrain service pages should be restored or the dead internal links removed.</p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-1-5" open>
+    <summary><span class="card-num">1.5</span><span class="card-summary-txt">Image alt text</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> 56 of 60 &lt;img&gt; tags on the homepage have alt="". Full-site audit (90 images total) confirms the pattern sitewide:</p>
+<div class="stat-bar" role="img" aria-label="28 of 90 images missing alt text, 31 percent"><div class="stat-bar-track"><div class="stat-bar-fill" style="width:31%"></div></div><span class="stat-bar-label">28 / 90 missing alt text (31%)</span></div>
+<div class="stat-bar" role="img" aria-label="7 of 90 images over 200 kilobytes"><div class="stat-bar-track"><div class="stat-bar-fill warn" style="width:8%"></div></div><span class="stat-bar-label">7 / 90 over 200KB</span></div>
+<div class="stat-bar" role="img" aria-label="0 of 90 images use WebP or AVIF format"><div class="stat-bar-track"><div class="stat-bar-fill" style="width:0%"></div></div><span class="stat-bar-label">0 / 90 in WebP/AVIF</span></div>
+<p style="font-size:13px;color:var(--muted);margin-top:10px;">Hero images affected: brunette-hair-colour-hero.jpg, kc-hero.jpg, mamsha-5.jpg, our-story-hero.jpg, contact-hero.jpg, +23 others. Highest priority (missing alt AND over 200KB): brunette-hair-colour-hero.jpg, kc-hero.jpg, mamsha-5.jpg, insights-page.jpg.</p>
+      <p><strong>Why it matters:</strong> Screen readers announce nothing; Google indexes images with zero context. Both an accessibility and image-SEO loss.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View full image optimisation tables</summary>
+        <div class="evi-body">
+          <p>Source: Images tab export (90 images total) + Missing Alt Text filter export (28 images).</p>
+          <div class="tbl-wrap"><table><thead><tr><th>Image over 200KB</th><th>Size</th><th>Format</th></tr></thead><tbody>
+            <tr><td>blog.png</td><td>295 KB</td><td>PNG</td></tr>
+            <tr><td>brunette-hair-colour-hero.jpg</td><td>283 KB</td><td>JPEG</td></tr>
+            <tr><td>education-hub-hero.jpg</td><td>231 KB</td><td>JPEG</td></tr>
+            <tr><td>mamsha-5.jpg</td><td>225 KB</td><td>JPEG</td></tr>
+            <tr><td>kc-hero.jpg</td><td>215 KB</td><td>JPEG</td></tr>
+            <tr><td>insights-page.jpg</td><td>213 KB</td><td>JPEG</td></tr>
+            <tr><td>hair-colour-hero.jpg</td><td>200 KB</td><td>JPEG</td></tr>
+          </tbody></table></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Highest-priority overlap (missing alt AND &gt;200KB)</th><th>Size</th><th>Alt text</th></tr></thead><tbody>
+            <tr><td>brunette-hair-colour-hero.jpg</td><td>289 KB</td><td>Missing</td></tr>
+            <tr><td>kc-hero.jpg</td><td>220 KB</td><td>Missing</td></tr>
+            <tr><td>mamsha-5.jpg</td><td>231 KB</td><td>Missing</td></tr>
+            <tr><td>insights-page.jpg</td><td>218 KB</td><td>Missing</td></tr>
+          </tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-1-6" open>
+    <summary><span class="card-num">1.6</span><span class="card-summary-txt">HTTPS / Console errors</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Live console check completed 7/17 (2:00–2:10 PM) on Home, Services, Contact, Locations, and the chat widget. Zero mixed-content/HTTP issues — clean. But every page throws the same 5 [LC Tracking ERROR] messages, all pointing to a missing data-tracking-id attribute on the Live Chat script tag (required attribute not found; failed to initialize; external tracking failed). Likely the same root cause behind the broken booking widget submit — see <a class="xref" href="#top-fixes">Top Fix #2</a> / <a class="xref" href="#item-4-6">4.6</a>.</p>
+      <p><strong>Why it matters:</strong> Mixed content triggers browser security warnings and can silently block resources.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📷 Click here for console screenshots (5 pages, before/after refresh)</summary>
+        <div class="evi-body">
+          <p>Chrome DevTools Console opened (Ctrl+Shift+I) then the page refreshed (Ctrl+R) to catch load-time errors, on each of the 5 test pages plus the booking chat widget. The same 5 [LC Tracking ERROR] messages recur every time.</p>
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/console_home_1.png" alt="Home page console before refresh"><div class="cap"><strong>Home</strong> — console opened (Ctrl+Shift+I), before refresh.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_home_2.png" alt="Home page console after refresh showing 5 tracking errors"><div class="cap"><strong>Home</strong> — after refresh (Ctrl+R): the 5 [LC Tracking ERROR] messages appear.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_services_1.png" alt="Services page console before refresh"><div class="cap"><strong>Services</strong> — before refresh.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_services_2.png" alt="Services page console after refresh"><div class="cap"><strong>Services</strong> — after refresh: same 5 tracking errors.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_contact_1.png" alt="Contact page console before refresh"><div class="cap"><strong>Contact</strong> — before refresh.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_contact_2.png" alt="Contact page console after refresh"><div class="cap"><strong>Contact</strong> — after refresh: same 5 tracking errors.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_locations_1.png" alt="Locations page console before refresh"><div class="cap"><strong>Locations</strong> — before refresh.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_locations_2.png" alt="Locations page console after refresh"><div class="cap"><strong>Locations</strong> — after refresh: same 5 tracking errors.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_booking_locations_1.png" alt="Booking widget from Locations console before refresh"><div class="cap"><strong>Booking widget (from Locations)</strong> — before refresh.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_booking_locations_2.png" alt="Booking widget from Locations console after refresh"><div class="cap"><strong>Booking widget (from Locations)</strong> — after refresh: same 5 tracking errors, widget still open.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_booking_home_1.png" alt="Booking widget from Home console before refresh"><div class="cap"><strong>Booking widget (from Home)</strong> — before refresh.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/console_booking_home_2.png" alt="Booking widget from Home console after refresh"><div class="cap"><strong>Booking widget (from Home)</strong> — after refresh: same 5 tracking errors, widget still open.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  </div>
+</section>
+
+<section id="block-2" class="block-section">
+  <h2>Block 2 — SEO &amp; Structured Data <span class="block-count">(6 items, unchanged from original run)</span></h2>
+  <div class="block-actions">
+    <button class="btn-mini" data-expand="block-2-items">Expand All</button>
+    <button class="btn-mini" data-collapse="block-2-items">Collapse All</button>
+  </div>
+  <div id="block-2-items">
+
+  <details class="card" id="item-2-1">
+    <summary><span class="card-num">2.1</span><span class="card-summary-txt">Titles / metas / H1s</span><span class="pill pass">PASS</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Sampled 6 pages: every title/meta unique and on-length; one H1 per page.</p>
+      <p><strong>Why it matters:</strong> Unique titles/metas drive click-through; duplicates confuse Google about which page to rank.</p>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-2-2" open>
+    <summary><span class="card-num">2.2</span><span class="card-summary-txt">Lexicon compliance</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Full audit of titles/metas against the TRS Menu Lexicon banned-word list (17 July) found 3 hits: "guarantee" on the homepage (inside the Confidence Promise section — this one is a content decision, not a simple rewrite, since 4 different phrasings of the same guarantee already exist brand-wide, see <a class="xref" href="#top-fixes">Top Fix #8</a>); "premium" and "upsell" on the Mamsha Al Saadiyat page (straightforward rewrites, no known side effects). Separately, the lexicon's ban on "problem"-naming language (banding, brassiness, box dye) may be limiting AI-search visibility for colour-correction queries, where competitors using that language rank ahead of TRS (see <a class="xref" href="#item-5-3">5.3</a>). Needs one combined decision from Tara/Owner B rather than 3 separate fixes.</p>
+      <p><strong>Why it matters:</strong> Consistent brand language keeps every page sounding like one salon. See <a class="xref" href="#top-fixes">Top Fix #5</a>.</p>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-2-3" open>
+    <summary><span class="card-num">2.3</span><span class="card-summary-txt">Structured data (schema)</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Zero LocalBusiness or Service schema anywhere on the site. See <a class="xref" href="#top-fixes">Top Fix #1</a>. Separately, the Recruitment Touchpoints tracker confirms JobPosting schema was added to /careers via a custom HTML block (13 July, verified via Rich Results Test) — doesn't cancel out this fix (different schema type) but confirms the site CAN carry valid JSON-LD, useful precedent for Owner A when implementing.</p>
+      <p><strong>Why it matters:</strong> Schema feeds Google's local pack, rich results, and how AI engines describe you by name.</p>
+    </div>
+  </details>
+
+  <details class="card" id="item-2-4">
+    <summary><span class="card-num">2.4</span><span class="card-summary-txt">Canonical URLs</span><span class="pill pass">PASS</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Every page checked has one correct self-referential canonical.</p>
+      <p><strong>Why it matters:</strong> Stops Google from splitting ranking signal across duplicate URLs.</p>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-2-5" open>
+    <summary><span class="card-num">2.5</span><span class="card-summary-txt">Sitemap</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> See <a class="xref" href="#top-fixes">Top Fix #4</a> — tararosesalon.com/sitemap.xml returns 404 (real sitemap lives at /en/sitemap_index.xml).</p>
+      <p><strong>Why it matters:</strong> Sitemap is how search engines efficiently discover every page you want indexed.</p>
+    </div>
+  </details>
+
+  <details class="card" id="item-2-6">
+    <summary><span class="card-num">2.6</span><span class="card-summary-txt">Robots.txt</span><span class="pill pass">PASS</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> No Disallow: / or blocked public paths.</p>
+      <p><strong>Why it matters:</strong> Confirms nothing important is accidentally hidden from search engines.</p>
+    </div>
+  </details>
+
+  </div>
+</section>
+
+<section id="block-3" class="block-section">
+  <h2>Block 3 — Behaviour <span class="block-count">(5 items — GA4, Clarity, Vercel)</span></h2>
+  <div class="block-actions">
+    <button class="btn-mini" data-expand="block-3-items">Expand All</button>
+    <button class="btn-mini" data-collapse="block-3-items">Collapse All</button>
+  </div>
+  <div id="block-3-items">
+
+  <details class="card" id="item-3-1">
+    <summary><span class="card-num">3.1</span><span class="card-summary-txt">GA4 firing check</span><span class="pill partial">IN PROGRESS — unresolved</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> GTM is firing but to the wrong GA4 property, and the correct tag is staged but not yet live due to a server-level caching issue. See <a class="xref" href="#new-findings">New Finding #5</a> for the full root-cause writeup (GTM-N6KPVCNF hardcoded in inc/analytics-pixels.php, sending to G-4QX6GCJM8K instead of the real property G-7W4EZVYKJV). Status: unresolved, needs hosting-level access.</p>
+      <p><strong>Why it matters:</strong> Without correct GA4 tracking, none of the downstream conversion/attribution work in Block 4 can be trusted.</p>
+    </div>
+  </details>
+
+  <details class="card" id="item-3-2">
+    <summary><span class="card-num">3.2</span><span class="card-summary-txt">Microsoft Clarity install</span><span class="pill pass">DONE — PASS</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Confirmed fully working and populated. Script added via a GeneratePress Elements Hook (wp_head, Display Rules set to "Entire Site"), LiteSpeed cache purged. Verified live: <code>window.clarity</code> returns a function on tararosesalon.com, and the clarity.ms tag is present in the page &lt;head&gt;. Dashboard is now live and populated: <strong>259 sessions, 207 unique users</strong>, with Rage Clicks, Dead Clicks, and Excessive Scrolling data all flowing — this is the data source behind <a class="xref" href="#item-3-5">3.5</a>'s mobile session review below.</p>
+      <p><strong>Why it matters:</strong> This is the raw session-recording data feeding the Janabiyah quiz-hijack and beTracker findings — a working install is the foundation for all of Block 3's behavioural analysis.</p>
+    </div>
+  </details>
+
+  <details class="card" id="item-3-3">
+    <summary><span class="card-num">3.3</span><span class="card-summary-txt">Vercel Analytics</span><span class="pill na">N/A</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Confirmed tararosesalon.com is hosted on WordPress, not Vercel — page metadata shows WPML (multi-language plugin, powers the /en/ae/ and /en/bh/ URL structure), all image/asset paths use the wp-content/uploads/ structure, and the site runs on the GeneratePress theme with GP Premium (used above to install the Clarity hook). Vercel Analytics only works for sites actually deployed on Vercel's own hosting infrastructure, so this check doesn't apply here.</p>
+      <p><strong>Why it matters:</strong> No further action needed for 3.3.</p>
+    </div>
+  </details>
+
+  <details class="card" id="item-3-4">
+    <summary><span class="card-num">3.4</span><span class="card-summary-txt">GA4 30-day report (Jun 16 – Jul 15, 2026)</span><span class="pill partial">PULLED — flags a likely wrong-property issue</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Sitewide totals: 5 views, 3 sessions, 33.33% engagement rate, 18s average engagement time. Landing pages: "/" (homepage) 2 of 3 sessions (66.7%); "(not set)" 1 session (33.3%) — only 2 distinct landing pages exist in this window, not a top-10. Exit pages: "/" and "/en/bh/locations/janabiyah/" each with 1 exit (2 total, evenly split). Device split: exactly 50% desktop / 50% mobile (1 active user each). Pages and screens detail: "/" 2 views; "/bh/locations/bahrain" 1 view; "/en/bh/locations/bahrain" 1 view; "/en/bh/locations/janabiyah/" 1 view.</p>
+      <p><strong>Flag:</strong> traffic volume is far too low for a live business site, and several page paths (/bh/locations/bahrain, /en/bh/locations/janabiyah/) look like Bahrain location pages, not what's expected from the main UAE property. This lines up with <a class="xref" href="#new-findings">Finding #5</a> — the GA4 property currently accessible may not be the one actually receiving live tararosesalon.com (UAE) traffic. Recommend confirming property/data stream settings before treating this as representative for the audit.</p>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-3-5" open>
+    <summary><span class="card-num">3.5</span><span class="card-summary-txt">Mobile session review (Clarity)</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Full CSV export of 300 recordings (237 unique sessions, last 3 days) reviewed instead of the checklist's literal Page=/booking filter, since no /booking page exists on the site (booking is external via Phorest/chat/WhatsApp — cross-logged against <a class="xref" href="#item-4-6">4.6</a>). ~15 sessions reviewed in detail, prioritized by click count/duration on services, locations, and pricing pages.</p>
+      <p><strong>Critical finding:</strong> an "Janabiyah Quiz Hijack" — a giveaway/quiz popup takes over /en/bh/locations/janabiyah/ almost immediately on load in 11 of ~15 sessions, blocking access to real location/booking content; traffic is mostly UK-based (Instagram/Linktree), likely internal QA testing but the bug is independently reproducible. Also found: a recurring "Can't find variable: beTracker" console error across multiple AE service/hair pages (cross-ref <a class="xref" href="#item-1-6">1.6</a> — likely a broken analytics/marketing script, could silently affect conversion tracking feeding <a class="xref" href="#item-4-3">4.3</a>/GA4); and a pattern of high-intent users on the Abu Dhabi AE location pages repeatedly tapping Book Now/Chat (4–5 times in one session) without a visibly confirmed booking completion — not a clear bug from logs alone, flagged for a manual video watch alongside <a class="xref" href="#item-4-2">4.2</a>/<a class="xref" href="#item-4-5">4.5</a>.</p>
+      <p><strong>Why it matters:</strong> real-user behaviour is the only way to catch a booking-blocking bug like this that automated checks would miss entirely.</p>
+
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View full session-evidence breakdown</summary>
+        <div class="evi-body">
+          <p><strong>Method / sampling note:</strong> a full CSV export of 300 recordings (237 unique sessions, last 3 days) was pulled from Clarity. Per the checklist instruction, a random-style sample was reviewed rather than all sessions. Sessions were prioritized by highest click count and duration among mobile sessions exiting on services, locations, or pricing pages, used as a proxy since the site has no dedicated /booking URL. Roughly 15 sessions had their full event logs reviewed in detail.</p>
+
+          <p><strong>Finding 1 — "Janabiyah Quiz Hijack" (Critical)</strong></p>
+          <ul class="plain">
+            <li>Affected page: /en/bh/locations/janabiyah/</li>
+            <li>Sessions affected (of sample): 11 of roughly 15 reviewed sessions landing on this page</li>
+            <li>Traffic source: Instagram link-in-bio and Linktree, mostly UK-based devices (Liverpool, Caterham). Flagged as likely internal QA testing rather than lost real leads, but the underlying bug is independently reproducible and confirmed by this pattern.</li>
+            <li>What happens: a giveaway/quiz popup ("Every founding member...", "Enter to Win &amp; Shape the...") takes over the page almost immediately on load. Every affected session has only 1 page view, meaning users never reach real location or booking content.</li>
+            <li>Observed friction: in the first 5 to 15 seconds, users rage-click or dead-click 6 to 8 times on two elements, "Complete [X] BHD Transformation" and "PLUS: Fabulous Women..." banners, before the quiz form fully engages. Session fwdfxa (00:08-00:23) and 1o7ox9g (00:07-00:08) both show an initial dead click plus repeated taps on the same non-responsive banner text.</li>
+            <li>Then funneled into: a multi-step quiz (hair concerns, appointment frequency, occupation) ending in a phone-number capture field and a Next button. Recording windows end before a final Submit is confirmed in every sampled case, so completion rate is unknown.</li>
+            <li>Session evidence: fwdfxa, 1qm5zg7, 96d1ld, zb7wla, 1yyacyp, 2lmwkc, g73l32, o5injt, 5nys5e, 1o7ox9g</li>
+            <li>Recommended checklist status: Fail, high-priority fix. Popup should not block access to location info or the Book Now CTA on first load.</li>
+          </ul>
+
+          <p><strong>Finding 2 — Recurring "beTracker" JavaScript Error</strong></p>
+          <ul class="plain">
+            <li>Cross-reference: also logged against <a class="xref" href="#item-1-6">Item 1.6</a>, HTTPS + console errors.</li>
+            <li>Error text: "Can't find variable: beTracker" fires on page load across multiple AE service/hair pages.</li>
+            <li>Sessions affected: 1r8iaho, zl03xo, 62a207, 19tmz7u</li>
+            <li>Secondary error (1 session): "undefined is not an object (evaluating window.webkit.messageHandlers)", session 1o7ox9g, likely a mobile webview API issue.</li>
+            <li>Why it matters: likely a broken or missing analytics/marketing tracking script. Could silently affect conversion-tracking accuracy feeding into Item 4.3 (GHL cross-check) and GA4 reporting. Recommend Owner A (dev) trace the beTracker reference.</li>
+            <li>Recommended checklist status: Fail (console not clean), flag for dev.</li>
+          </ul>
+
+          <p><strong>Finding 3 — High Booking Intent, But Repeated Attempts on AE Location Pages</strong></p>
+          <ul class="plain">
+            <li>Affected pages: /en/ae/locations/abu-dhabi/mamsha-al-saadiyat/, /en/ae/locations/abu-dhabi/khalifa-city/</li>
+            <li>Pattern: users show high intent (Clarity-tagged "High") and repeatedly trigger the Book smart event and Book Now clicks, sometimes 4 to 5 times within a single session (e.g. session 62a207: 5 Book Now taps across 7 minutes, spanning 3 pages), plus multiple Chat with Us clicks, without a visibly confirmed booking completion in the recording.</li>
+            <li>Session evidence: 62a207 (7:23 duration, 22 clicks, 13 pages), nvtyxk (several short sessions returning to Book/Chat repeatedly), 1r8iaho (28+ minute session, re-engages with Book Now and chat after a long idle gap)</li>
+            <li>Interpretation: not clearly a bug from event logs alone. Could indicate friction in the booking form or chat widget (too many steps, unclear confirmation state) causing users to retry. Recommend pairing with an actual video watch of session 62a207 or 1r8iaho, and cross-checking against <a class="xref" href="#item-4-2">Item 4.2</a> (GA4 funnel drop-off) and <a class="xref" href="#item-4-5">Item 4.5</a> (real-phone form test).</li>
+            <li>Recommended checklist status: flag for follow-up, not a clear fail, but worth a manual watch before sign-off.</li>
+          </ul>
+
+          <p><strong>Summary for Checklist Section 3.5</strong></p>
+          <div class="tbl-wrap"><table><thead><tr><th>Field</th><th>Content</th></tr></thead><tbody>
+            <tr><td>Status</td><td>Fail</td></tr>
+            <tr><td>Sessions reviewed</td><td>Roughly 15 of 237 total mobile-eligible sessions (random-priority sample, not exhaustive, see method note above)</td></tr>
+            <tr><td>Findings</td><td>1. Janabiyah quiz popup blocks location/booking access (critical), 11 sessions. 2. Recurring beTracker JS console error on AE pages, cross-ref 1.6. 3. Repeated Book Now/Chat attempts on AE location pages suggest booking-form friction, cross-ref 4.2, 4.5.</td></tr>
+            <tr><td>Cross-references</td><td>Items 1.6, 4.2, 4.3, 4.5, 4.6</td></tr>
+          </tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  </div>
+</section>
+
+<section id="block-4" class="block-section">
+  <h2>Block 4 — Conversion &amp; Attribution <span class="block-count">(6 items — UTM, funnel, GHL, Phorest, mobile forms, Book-button test)</span></h2>
+  <div class="block-actions">
+    <button class="btn-mini" data-expand="block-4-items">Expand All</button>
+    <button class="btn-mini" data-collapse="block-4-items">Collapse All</button>
+  </div>
+  <div id="block-4-items">
+
+  <details class="card fail-open" id="item-4-1" open>
+    <summary><span class="card-num">4.1</span><span class="card-summary-txt">UTM tagging discipline</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Of 221 total external links (Screaming Frog External tab):</p>
+<div class="stat-bar" role="img" aria-label="0 of 221 links have genuine marketing UTM tagging"><div class="stat-bar-track"><div class="stat-bar-fill" style="width:1%"></div></div><span class="stat-bar-label">0 / 221 genuinely tagged</span></div>
+<p style="font-size:13px;color:var(--ink-soft);margin-top:10px;">Highest priority — untagged: the brand's own Facebook/Instagram profile links, and the wa.me/wa.link WhatsApp booking CTAs (likely same flow as mobile "Book Now"). No way to attribute which page/source drove a WhatsApp lead — feeds into <a class="xref" href="#item-4-3">4.3</a>/<a class="xref" href="#item-4-4">4.4</a>. Recommend tagging WhatsApp links first.</p>
+      <p><strong>Why it matters:</strong> without tagging, marketing spend can't be tied to bookings. See <a class="xref" href="#top-fixes">Top Fix #14</a>.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View full UTM tagging audit</summary>
+        <div class="evi-body">
+          <p>Source: Screaming Frog External tab export, 221 total external links.</p>
+          <p><strong>Headline finding:</strong> Only 2 of 221 external links carry any UTM parameter — and both are Instagram's own auto-generated embed params (utm_source=ig_embed&amp;campaign=loading), not manually-set marketing UTMs. Effectively 0 of 221 links have genuine marketing-intent UTM tagging.</p>
+          <p><strong>Untagged link breakdown by platform</strong></p>
+          <div class="tbl-wrap"><table><thead><tr><th>Platform</th><th>Count</th><th>Notes</th></tr></thead><tbody>
+            <tr><td>TikTok</td><td>43</td><td>Mostly embed/hashtag links inside blog content</td></tr>
+            <tr><td>Facebook</td><td>28</td><td>Includes brand profile link + share buttons</td></tr>
+            <tr><td>LinkedIn</td><td>27</td><td>Share buttons + company page link</td></tr>
+            <tr><td>WhatsApp (api.whatsapp.com)</td><td>27</td><td>Pre-filled share messages</td></tr>
+            <tr><td>Pinterest</td><td>26</td><td>Share/pin buttons</td></tr>
+            <tr><td>Twitter/X</td><td>26</td><td>Share buttons</td></tr>
+            <tr><td>Instagram</td><td>6–8</td><td>Brand profile link</td></tr>
+            <tr><td>YouTube</td><td>1</td><td>Brand channel link</td></tr>
+            <tr><td>wa.me / wa.link</td><td>4</td><td>Direct WhatsApp booking links</td></tr>
+          </tbody></table></div>
+          <p><strong>Highest-priority untagged CTAs</strong></p>
+          <ul class="plain">
+            <li>facebook.com/tararosesalon/ and instagram.com/tararosesalon/ — own brand profile links, untagged.</li>
+            <li>wa.me/97144572309 and 3× wa.link/... — direct WhatsApp booking CTAs, likely the same booking flow used in the mobile "Book Now" path. Without UTM, there's no way to attribute which page/source drove a WhatsApp booking lead.</li>
+          </ul>
+          <p><strong>Other non-social external links flagged (not marketing CTAs, but noted)</strong></p>
+          <ul class="plain">
+            <li>go.tararosesalon.com/kca — own tracking/campaign short-link, untagged in its own right</li>
+            <li>3× scnv.io/... — third-party link shortener, campaign unclear</li>
+            <li>2× forms.gle/... — Google Forms, likely job-application forms</li>
+            <li>dropbox.com/.../donations list.pdf — external file link</li>
+            <li>inphota.com/...pink-run — event partnership link</li>
+            <li>skyebluhealing.com, chaselifeconsulting.com, healingwaves.me — partner/collab wellness sites linked from blog content</li>
+          </ul>
+          <p><strong>4.1 — Consolidated Verdict:</strong> Status FAIL — 0 of 221 links carry genuine marketing UTM tagging (pass bar: zero untagged marketing CTAs). Recommended priority: tag the WhatsApp booking links (wa.me, wa.link) first, since they sit directly in the conversion funnel — before addressing lower-priority share buttons.</p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card" id="item-4-2">
+    <summary><span class="card-num">4.2</span><span class="card-summary-txt">GA4 funnel map</span><span class="pill todo">⏳ Pending Start</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Not started. Blocked in part by the wrong-property GA4 issue in <a class="xref" href="#item-3-1">3.1</a> — worth revisiting once that's resolved. Cross-referenced by <a class="xref" href="#item-3-5">3.5</a> Finding 3 (repeated Book Now/Chat attempts) as a good starting point for the funnel map once begun.</p>
+    </div>
+  </details>
+
+  <details class="card" id="item-4-3">
+    <summary><span class="card-num">4.3</span><span class="card-summary-txt">GHL cross-check</span><span class="pill todo">⏳ Pending Start</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Not started. Real ops flow: new leads come into GHL via WhatsApp/IG/FB/TikTok (see <a class="xref" href="#item-4-6">4.6</a>), so this cross-check should confirm the booking widget's captured leads actually land in GHL correctly once <a class="xref" href="#item-4-6">4.6</a>'s submit failure is fixed.</p>
+    </div>
+  </details>
+
+  <details class="card" id="item-4-4">
+    <summary><span class="card-num">4.4</span><span class="card-summary-txt">Phorest cross-check</span><span class="pill todo">⏳ Pending Start</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Not started. Per Kate's actual booking flow, Phorest is correctly internal/manual-only — existing clients are booked there directly by the team, not through the website. This cross-check would confirm that mapping stays consistent once other Block 4 items are resolved.</p>
+    </div>
+  </details>
+
+  <details class="card" id="item-4-5">
+    <summary><span class="card-num">4.5</span><span class="card-summary-txt">Real-phone form test</span><span class="pill partial">PARTIAL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Tested live on an actual Android phone, 17 July. Important new finding: on mobile, "Book Now" hands off differently than on desktop — it opens the same in-site form, but on submit it routes into native WhatsApp Business chat (Meta-secured), not the broken desktop widget. First attempt hit an "Invalid value" error on the phone field; corrected and resubmitted, then WhatsApp opened with the message pre-filled and sent successfully, returning "Thank you — We will get back to you shortly." Timed at 1:02.62 with a stopwatch, thumb-only — just over the checklist's 60-second pass bar (partly due to the phone-field retry). Functionally the mobile path works end-to-end: WhatsApp followed up with a full structured auto-reply, not just a bare confirmation. The desktop widget failure (<a class="xref" href="#top-fixes">Top Fix #2</a> / <a class="xref" href="#item-4-6">4.6</a>) does not reproduce on mobile. Recommend Owner A investigate why desktop and mobile behave differently — worth checking if this is a device-conditional script that's only broken on desktop.</p>
+      <p><strong>Why it matters:</strong> confirms the mobile booking path is functionally sound even while desktop is broken — narrows the fix scope for Owner A.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📷 Click here for the full step-by-step test evidence</summary>
+        <div class="evi-body">
+          <p>Tested live on an actual Android phone, thumb-only, timed with a stopwatch.</p>
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/mobile_test_1_invalidphone.png" alt="Phone field flagged Invalid value on first attempt"><div class="cap"><strong>Step 1 — "Invalid value" error.</strong> Mobile Chrome, tararosesalon.com — phone field flagged "Invalid value" on first attempt.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/mobile_test_2_whatsapp.png" alt="Submit handed off to native WhatsApp Business chat"><div class="cap"><strong>Step 2 — handed off to WhatsApp.</strong> Tara Rose Salon and Fratelli... Business Account opened in WhatsApp with the message pre-filled and ready to send — a Meta-secured chat, not the broken desktop widget.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/mobile_test_3_success.png" alt="Confirmation received back on the website"><div class="cap"><strong>Step 3 — confirmation received.</strong> Split-screen (recent apps) showing the site's "Thank you — We will get back to you shortly" confirmation alongside the WhatsApp message just sent.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/mobile_test_4_stopwatch.png" alt="Stopwatch total time recorded"><div class="cap"><strong>Step 4 — total time.</strong> Stopwatch: 1:02.62 total, thumb-only, from first tap to confirmation — just over the checklist's 60-second pass bar.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/whatsapp_autoreply_menu.png" alt="Full WhatsApp auto-reply with quick-reply menu"><div class="cap"><strong>Step 5 — full auto-reply.</strong> Tara Rose Salon and Fratelli Barbershop WhatsApp Business auto-reply received shortly after with quick-reply menu buttons — Book an appointment, Services, Branches, Other inquiries. Confirms a genuine, structured chatbot handoff, not just a one-line acknowledgment.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-4-6" open>
+    <summary><span class="card-num">4.6</span><span class="card-summary-txt">Booking channel test (reframed from Phorest deep-link, per actual ops flow)</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Confirmed via live screenshot 7/17 (1:55 PM): "Book Now" opens the in-site chat widget, not Phorest — Phorest is correctly internal/manual-only per Kate's actual booking flow (new leads via GHL from WhatsApp/IG/FB/TikTok, existing clients via Respond.io). The real pass bar is whether the widget successfully captures the lead into GHL — it does not: submitting returns a red "Failed" / "Try Again!!" status (test: name Kate Alsaybar, phone 9397238412, message "I want to know more and book an appointment"). 100% of visitors hitting the primary CTA currently hit a dead end. Likely tied to the same missing data-tracking-id script error logged under <a class="xref" href="#item-1-6">1.6</a> — worth Owner A checking whether fixing that also fixes the submit failure. Separately worth asking Owner A/Tara: should this widget be a native WhatsApp (wa.me) deep link straight into the GHL inbox, matching how the other lead channels work, instead of a custom in-site widget?</p>
+      <p><strong>Why it matters:</strong> this is the primary booking CTA on the whole site — a broken submit here is the single highest-impact bug in the audit. Owner: A, urgent.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📷 Click here for the failure screenshot</summary>
+        <div class="evi-body">
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/booking-widget-failed.png" alt="Booking chat widget showing red Failed status"><div class="cap">Contact page chat widget showing a red "Failed" status with "Try Again!!" after submitting name, number, and message. Confirmed failing on two separate Google accounts.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  </div>
+</section>
+
+<section id="block-5" class="block-section">
+  <h2>Block 5 — Local + AI Search <span class="block-count">(5 items)</span></h2>
+  <div class="block-actions">
+    <button class="btn-mini" data-expand="block-5-items">Expand All</button>
+    <button class="btn-mini" data-collapse="block-5-items">Collapse All</button>
+  </div>
+  <div id="block-5-items">
+
+  <details class="card fail-open" id="item-5-1" open>
+    <summary><span class="card-num">5.1</span><span class="card-summary-txt">GBP Freshness</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Done for all 5 locations. All 4 UAE branches confirmed stale (batch-posted Jun 19, 27 days ago); Bahrain has deeper issues (see <a class="xref" href="#top-fixes">Top Fix #7</a>). Full detail on the freshness findings, category/link errors, and Bahrain's compounding issues is in <a class="xref" href="#new-findings">New Finding #3</a>.</p>
+      <p><strong>Why it matters:</strong> stale GBP posts and a broken Bahrain listing directly hurt local pack visibility and trust signals.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View incognito Google search evidence per location</summary>
+        <div class="evi-body">
+          <p>Branded-name searches in incognito mode, used to verify GBP freshness (ratings, hours, address, last post date) per location. Note: these are branded searches showing the Knowledge Panel, not the competitive local 3-pack — see <a class="xref" href="#item-5-2">5.2</a> below for the separate ranking test.</p>
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/gbp-saadiyat-incognito.png" alt="Saadiyat Abu Dhabi incognito Google search result"><div class="cap"><strong>Saadiyat, Abu Dhabi.</strong> 4.8★, 677 reviews. Hours current (Open, closes 8PM). Last post: Jun 19, 2026.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/gbp-motorcity-incognito.png" alt="Motor City Dubai incognito Google search result"><div class="cap"><strong>Motor City, Dubai.</strong> 5.0★, 408 reviews. Hours current (Open, closes 8PM). Last post: Jun 19, 2026.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/gbp-khalifacity-incognito.png" alt="Khalifa City A incognito Google search result"><div class="cap"><strong>Khalifa City A, Abu Dhabi.</strong> 4.8★, 890 reviews. Hours current (Open, closes 8PM). Last post: Jun 19, 2026.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/gbp-alquoz-incognito.png" alt="Al Quoz Dubai incognito Google search result"><div class="cap"><strong>Al Quoz, Dubai.</strong> 5.0★, 408 reviews. Hours current (Open, closes 8PM). Last post: Jun 19, 2026.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/gbp-bahrain-incognito.png" alt="District 2 Bahrain incognito Google search result"><div class="cap"><strong>District 2, Bahrain.</strong> 5.0★, only 7 reviews. Still shows "Opening January 2026" messaging despite today being 7/16/26 and the backend Opening Date field set to Aug 1, 2026. See <a class="xref" href="#top-fixes">Top Fix #7</a> for full breakdown.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-5-2" open>
+    <summary><span class="card-num">5.2</span><span class="card-summary-txt">Local pack ranking</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Now DONE, with two separate tests on file — the official checklist-compliant result is FAIL. An initial pass (16 July, "[location] + hair salon" phrasing — see <a class="xref" href="#new-findings">Finding #4a</a>) was a directional read, not run against the checklist's own instruction. A second test (17 July, incognito + mobile, exact checklist wording "[location name] + salon" per location) is the authoritative one: Khalifa City A #2 ✅, Mamsha Al Saadiyat #1 ✅, Al Quoz #1 ✅, but Motor City #5 of 10 ❌ — behind La Maison de Amelie, Gladys Beauty Saloon, Pretty Parlor Beauty Lounge, and Code Hair Ladies Salon. Since the checklist's pass bar is top-3 at every location, Motor City's #5 fails the block. Generic, non-branded searches ("dubai salon") surfaced TRS at neither test and are logged as a separate risk flag, not counted against the 4 location results.</p>
+      <p><strong>Why it matters:</strong> local pack position directly drives walk-in and call volume from nearby searchers — Motor City's #5 is losing visibility to 4 competitors.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View the authoritative 5.2 test + screenshots</summary>
+        <div class="evi-body">
+          <p>Site: tararosesalon.com · Checklist: Handover Checklist v2 (Click-Through Edition) · Compiled 17 July 2026. This is the checklist-instruction-compliant test — run exactly as written ("[Location name] + salon" per location, incognito, mobile) — and is treated as authoritative for the official 5.2 Pass/Fail verdict, superseding the earlier directional read in Finding #4a.</p>
+          <p>Checklist instruction: search "[Location name] + salon" and "hair salon near me" per location, incognito, mobile. Pass bar: TRS appears in the top 3 of the local pack (3-pack map result) for every location.</p>
+          <div class="tbl-wrap"><table><thead><tr><th>Location</th><th>Search term used</th><th>TRS Rank</th><th>Status</th></tr></thead><tbody>
+            <tr><td>Khalifa City A</td><td>"khalifa city a salon"</td><td>#2 of 10</td><td>PASS</td></tr>
+            <tr><td>Mamsha Al Saadiyat</td><td>"mamsha al saadiyat salon"</td><td>#1 of 11</td><td>PASS</td></tr>
+            <tr><td>Al Quoz, Dubai</td><td>"al quoz dubai salon"</td><td>#1 of 10</td><td>PASS</td></tr>
+            <tr><td>Motor City, Dubai</td><td>"motor city dubai salon"</td><td>#5 of 10</td><td>FAIL</td></tr>
+          </tbody></table></div>
+          <p>Methodology note: searches used the branch/area name + "salon" rather than generic city-level terms. Generic, non-branded searches ("abu dhabi salon," "dubai salon") did not surface TRS at all — logged as a separate risk flag, not counted against the four location-level results, since the checklist's own instruction is a location-name search. Test run from a mobile device in the Philippines (not on-device in the UAE).</p>
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/local-pack-alquoz-pass.png" alt="Al Quoz local pack search showing TRS ranked number 1"><div class="cap">Al Quoz, Dubai — "al quoz dubai salon" — TRS #1 (map pin + local pack card, 5.0★ 408 reviews)</div></div>
+            <div class="shot"><img loading="lazy" src="assets/local-pack-motorcity-fail.png" alt="Motor City local pack search showing TRS ranked number 5, a fail"><div class="cap">Motor City, Dubai — "motor city dubai salon" — TRS #5, FAIL (ranked behind La Maison de Amelie, Gladys Beauty Saloon, Pretty Parlor Beauty Lounge, Code Hair Ladies Salon)</div></div>
+          </div>
+          <p style="margin-top:12px;"><strong>Status Summary (5.2 row):</strong> Local pack ranking — 4 branded location searches — 3 of 4 Pass (Khalifa City A, Saadiyat, Al Quoz) · 1 Fail (Motor City, #5).</p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card" id="item-5-3">
+    <summary><span class="card-num">5.3</span><span class="card-summary-txt">AI search visibility (ChatGPT/Perplexity/Gemini)</span><span class="pill partial">PARTIAL — mixed</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> Fully tested now — 8 generic queries × 3 platforms. ChatGPT and Gemini both surface Tara Rose reliably for location-anchored searches (6/8 each, mostly #1); Perplexity lags badly (2/8). All 3 platforms miss Tara Rose entirely for non-location searches ("best hair salon in Dubai," "hair colour Dubai"). Also surfaced a 4th brand-promise phrasing via Gemini — folds into the <a class="xref" href="#item-5-4">Confidence Promise finding</a>.</p>
+      <p><strong>Why it matters:</strong> as AI-synthesized answers become a bigger discovery channel, invisibility on citywide/generic queries is a growing blind spot even where branded/local queries perform well.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View the full 5.3 test breakdown</summary>
+        <div class="evi-body">
+          <p>Checklist instruction: run the same prompts on ChatGPT, Perplexity, and Gemini; screenshot the answers. Pass bar: TRS named or cited. If not, log the exact phrasing the AI uses.</p>
+          <p>Source: this section was tested and logged by Kate (Owner A) directly — dated 16–17 July 2026 — not re-tested in this session. No screenshot files for the individual ChatGPT/Perplexity/Gemini answers were provided alongside that source document, so none are embedded below. Findings are reproduced as logged.</p>
+          <p><strong>Location-anchored queries</strong> (Al Quoz, Motor City, Abu Dhabi, Khalifa City, Saadiyat, "near Motor City") — 8 queries tested per platform:</p>
+          <ul class="plain">
+            <li>ChatGPT — TRS surfaced in 6 of 8 queries, almost always ranked #1 (Saadiyat #2, after Definition The Hair Expert).</li>
+            <li>Gemini — TRS surfaced in 6 of 8 queries, mostly #1 (Al Quoz #2 after CHALK; Abu Dhabi citywide #3 after Marquee Hair Salon and Sisters Beauty Lounge).</li>
+            <li>Perplexity — TRS surfaced in only 2 of 8 queries (Abu Dhabi citywide + Khalifa City, both #1). Invisible for Al Quoz, Motor City, Saadiyat, and "near Motor City" — named unrelated nearby salons instead, never mentioning TRS. Flagged as the clear laggard platform.</li>
+          </ul>
+          <p><strong>Citywide / non-location queries</strong> — weak on all 3 platforms:</p>
+          <ul class="plain">
+            <li>"best hair salon in Dubai" — TRS invisible on ChatGPT, Perplexity, AND Gemini.</li>
+            <li>"top rated hair salons Dubai for hair colour" — TRS invisible on all 3 platforms.</li>
+          </ul>
+          <p>Competitors named instead across these two queries: Y12, Ivy Beauty &amp; Bubbles, The Hair Palace, Miled Andos, mariadowling, CHALK, Beauty Club London, The Colorist Hair Salon, Sisters Beauty Lounge.</p>
+          <p><strong>Additional findings logged alongside 5.3:</strong></p>
+          <ul class="plain">
+            <li>Gemini's Al Quoz answer described TRS's guarantee as a "7-day service satisfaction guarantee" — a 4th distinct phrasing of the brand promise (on top of GBP's "7-Day Confidence Promise," the Motor City page's "7-Day Happiness Guarante[e]," and Linktree's "7-Day Guarantee by Tara"). Suggests the phrasing inconsistency is already baked into AI-crawled site content, not just a live-copy issue — feeds into <a class="xref" href="#top-fixes">Top Fix #8</a>.</li>
+            <li>"Specialist hair colourist Dubai" — a query that used to include TRS in an editorial AI round-up dropped it entirely this week. Flagged to re-check whether this is a one-off or a trend.</li>
+          </ul>
+          <p style="margin-top:12px;"><strong>Status Summary (5.3 row):</strong> AI search visibility — ChatGPT / Perplexity / Gemini, 8 queries each — Strong on location-anchored queries (ChatGPT/Gemini 6/8, Perplexity 2/8) · Invisible on all citywide/generic queries across all 3 platforms.</p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card fail-open" id="item-5-4" open>
+    <summary><span class="card-num">5.4/5.5</span><span class="card-summary-txt">Confidence Promise / anchor phrase consistency</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <p><strong>Notes / Evidence:</strong> BOTH now DONE. 5.4 (16 July, direct Ctrl+F on live pages) found the phrase only on the homepage — Al Quoz, Khalifa City, and Saadiyat pages don't mention it at all, Motor City uses different wording, and Bahrain's page doesn't exist yet (404). 5.5 (cross-platform bio check) found none of YouTube/IG/TikTok/Facebook use it either. See <a class="xref" href="#new-findings">Finding #3</a> and <a class="xref" href="#top-fixes">Top Fix #8</a> (upgraded — this is now a content-completeness gap on 3 of 4 location pages, not just a wording mismatch). Update (16 July): Instagram's "Guarantee" Story Highlight has now been opened and reviewed (oldest to newest post) — no additional phrasing found, thread closed.</p>
+      <p><strong>Why it matters:</strong> four different outcomes across the brand's own channels for what should be one consistent, visible guarantee — confuses customers and dilutes the brand promise.</p>
+
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View 5.4 Ctrl+F screenshots (homepage + every location page)</summary>
+        <div class="evi-body">
+          <p>Kate ran an incognito Ctrl+F search for "confidence promise" on the homepage and every live location page. Match count shown top-left of each browser find bar.</p>
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/cp_homepage.png" alt="Homepage Ctrl+F search showing 2 of 2 matches for confidence promise"><div class="cap"><strong>Homepage (tararosesalon.com/en/ae/).</strong> 2/2 matches. "The Tara Rose Confidence Promise" heading + full body copy naming it, including the 7-day return/adjustment offer. The only page where the phrase actually lives verbatim.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/cp_alquoz.png" alt="Al Quoz location page Ctrl+F search showing 0 matches"><div class="cap"><strong>Al Quoz location page.</strong> 0/0 matches. Phrase does not appear anywhere on this page.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/cp_khalifacity.png" alt="Khalifa City location page Ctrl+F search showing 0 matches"><div class="cap"><strong>Khalifa City location page.</strong> 0/0 matches. Phrase does not appear anywhere on this page.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/cp_saadiyat.png" alt="Mamsha Al Saadiyat location page Ctrl+F search showing 0 matches"><div class="cap"><strong>Mamsha Al Saadiyat location page.</strong> 0/0 matches. Phrase does not appear anywhere on this page.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/cp_bahrain1.png" alt="Bahrain en/bahrain URL showing a 404 page not found"><div class="cap"><strong>Bahrain — /en/bahrain.</strong> 404 "Page not found." No live Bahrain page exists yet.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/cp_bahrain2.png" alt="Bahrain en/bah URL showing a 404 page not found"><div class="cap"><strong>Bahrain — /en/bah.</strong> 404 "Page not found." Confirmed via the shorter URL slug too — same result.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/cp_motorcity.png" alt="Motor City location page Ctrl+F search showing 0 matches"><div class="cap"><strong>Motor City location page.</strong> 0/0 matches. Confirms the earlier finding — this page uses "7-Day Happiness Guarante[e]" instead.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View 5.5 cross-platform bio/about screenshots</summary>
+        <div class="evi-body">
+          <p>Kate checked native bio/about text directly on YouTube, both Instagram accounts, TikTok, and Facebook. Finding: none of the five visibly use "Confidence Promise" or any of the other guarantee phrasings already logged — mainly because these bios are optimized for hiring signal, not the brand guarantee.</p>
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/yt_confidence_search.png" alt="YouTube channel search for confidence showing no hits"><div class="cap"><strong>YouTube — The Tara Rose Podcast (@tararosesalon channel).</strong> Searched "confidence" on the channel — no hits. About panel links only to tararosesalon.com, 27 subscribers, 30 videos. No guarantee phrase in the channel bio itself (per the recruitment tracker, the "7-day guarantee" welcome video does exist on this channel — just not in the bio text).</div></div>
+            <div class="shot"><img loading="lazy" src="assets/ig_personal_tararosekidd.png" alt="Instagram founder personal account bio"><div class="cap"><strong>Instagram — @tararosekidd (founder's personal account).</strong> Bio is personal/entrepreneur-focused — no guarantee phrase, not expected to carry one since this isn't the brand account.</div></div>
+            <div class="shot"><img loading="lazy" src="assets/ig_brand_tararosesalon.png" alt="Instagram brand account bio"><div class="cap"><strong>Instagram — @tararosesalon (brand account).</strong> Bio: "Founded by @tararosekidd, Award-winning salons in Dubai &amp; Abu Dhabi, Hair • Beauty • Wellness, Open daily 9am–8pm, Hiring — Careers below." No guarantee phrase in the bio text — but there's a Story Highlight literally labelled "Guarantee" (now reviewed, see notes above — no new phrasing found).</div></div>
+            <div class="shot"><img loading="lazy" src="assets/tiktok_tararosesalon.png" alt="TikTok brand account bio"><div class="cap"><strong>TikTok — @tararosesalon.</strong> Bio: "We make women in Dubai &amp; Abu Dhabi feel amazing ✨ Hiring: link below." No guarantee phrase — confirmed intentional per the recruitment tracker (bio rewritten 13 July specifically to add the hiring CTA).</div></div>
+            <div class="shot"><img loading="lazy" src="assets/fb_about_tararosesalon.png" alt="Facebook About tab intro"><div class="cap"><strong>Facebook — Tara Rose Salon (About tab).</strong> Intro: "Four salons across Dubai &amp; Abu Dhabi. Hiring: tararosesalon.com/careers." No guarantee phrase — same pattern, hiring CTA occupies the one visible bio line.</div></div>
+          </div>
+          <p style="margin-top:12px;">Cross-referenced against Kate's Recruitment Touchpoints tracker (fixes made 9–13 July): the GBP recruitment blurb is confirmed intentional (added 9–10 July across all 4 locations); Al Quoz's "get directions" link previously pointed to Motor City's address, already fixed and verified live 9–10 July; the tracker confirms a "7-day guarantee" welcome video exists on the YouTube channel (only its logo was updated 9–10 July) — very likely the same video Linktree links as "7-DAY GUARANTEE BY TARA," reinforcing that "7-day guarantee" language is what's actually being pushed on video/social channels.</p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  </div>
+</section>
+
+<section id="rollup" class="block-section">
+  <h2>Pass/Fail Roll-Up <span class="block-count">(Live, updated 17 July 2026)</span></h2>
+  <p style="color:var(--muted);font-size:13.5px;">Real verdicts against each block's own checklist pass bar — not just whether a check was attempted. "Pending / Not Started" covers items still genuinely in progress, blocked, or not yet reached, so the counts stay honest rather than forcing everything into Pass/Fail.</p>
+  <div class="rollup-collapsible" id="rollupCollapsible" tabindex="0">
+  <div class="rollup-peek">Hover or tap to view full breakdown ▾</div>
+  <div class="tbl-wrap"><table><thead><tr><th>Block</th><th>Pass</th><th>Fail</th><th>N/A</th><th>Pending / Not Started</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>1 — Technical Health (6)</td><td>1</td><td>5</td><td>0</td><td>0</td><td>1.4 crawl is now a confirmed FAIL (14 real 404s + 7 confirmed 2-hop redirect chains, full 471/471 crawl complete). 1.2 Lighthouse now has 3 of 4 pages scored (Home, Locations, Contact all PASS; Booking tied to Home, pending).</td></tr>
+    <tr><td>2 — SEO &amp; Structured Data (6)</td><td>3</td><td>3</td><td>0</td><td>0</td><td>Complete. Fails: 2.2 lexicon, 2.3 schema, 2.5 sitemap.</td></tr>
+    <tr><td>3 — Behaviour (5)</td><td>1</td><td>2</td><td>1</td><td>1</td><td>3.3 Vercel is N/A (WordPress, not Vercel). 3.5 is now a confirmed FAIL — critical Janabiyah quiz-popup finding plus a recurring beTracker JS error, reviewed via CSV export rather than waiting on the Clarity dashboard. 3.1 and 3.4 both point to the same root cause — wrong/blocked GA4 property.</td></tr>
+    <tr><td>4 — Conversion &amp; Attribution (6)</td><td>0</td><td>3</td><td>0</td><td>3</td><td>4.6 fails (desktop widget doesn't submit); 4.1 now a confirmed FAIL (0 of 221 external links carry genuine marketing UTM tagging); 4.5 partial — mobile test works functionally (routes to WhatsApp, gets confirmation) but timed at 1:02.62, just over the 60s bar. 4.2–4.4 not yet started.</td></tr>
+    <tr><td>5 — Local + AI Search (5)</td><td>0</td><td>5</td><td>0</td><td>0</td><td>5.2 is now a confirmed FAIL — the checklist-compliant incognito/mobile test found Motor City at #5, missing the top-3 pass bar. 5.3 is mixed (strong on location-anchored queries, invisible on citywide ones) — logged as partial, not a clean pass/fail. 5.5 (IG Story Highlight) opened and reviewed 16 July — no new phrasing found; folded into the existing Confidence Promise inconsistency fail (Top Fix #8), thread closed.</td></tr>
+    <tr><td><strong>TOTAL (28)</strong></td><td><strong>5</strong></td><td><strong>18</strong></td><td><strong>1</strong></td><td><strong>4</strong></td><td>Reflects real testing outcomes, not just task-completion — several "done" checks (e.g. GBP freshness, schema, sitemap, 1.4 crawl, 3.5 mobile sessions, 4.1 UTM tagging, 5.2 local pack) failed their own pass bar once fully tested. Updated 17 July with the 1.2/1.4/1.5/2.2/4.1 Session Findings Compilation, the 1.3b Indexing Triage, the 3.5 Mobile Session Review, and the 5.2/5.3 Completion Summary folded in.</td></tr>
+  </tbody></table></div>
+  </div>
+</section>
+
+<section id="open-questions" class="block-section">
+  <h2>Open Questions for Tara / Owners</h2>
+  <ul class="plain" style="font-size:14.5px;">
+    <li>Chat-first booking flow (<a class="xref" href="#top-fixes">Top Fix #2</a>) — intentional, or should Book Now go straight to Phorest? (Separate from the urgent submit-failure bug.)</li>
+    <li>Lexicon exceptions — "guarantee" / "premium" / "upsell": approved exception or rewrite? See <a class="xref" href="#item-2-2">2.2</a>.</li>
+    <li>Who currently owns/administers the domain's DNS and hosting — needed to set up Search Console verification.</li>
+  </ul>
+</section>
+
+<section id="recommendations" class="block-section">
+  <h2>Recommendations from Tara <span class="block-count">(via voice note, 17 July)</span></h2>
+  <p>Tara sent voice notes while reviewing Metricool, with direction on how the branch profiles and campaign pages should be structured going forward:</p>
+  <ul class="plain">
+    <li>Keep each branch's Google Business Profile separate — don't summarize/combine them into one view. Each branch should be set up individually so its efficiency can be analyzed on its own.</li>
+    <li>Connect each branch's own webpage to that branch's GBP and Google Ads, so traffic and performance can be properly tracked and analyzed per salon.</li>
+    <li>Recruitment landing pages should connect directly to the specific recruitment campaign (precedent: the "Founding 45" webpage built for Daisy), including the linked Instagram — with the ability to customize per campaign so real-time campaigns can be managed and launched as needed.</li>
+  </ul>
+  <div class="shot-grid" style="max-width:420px;">
+    <div class="shot"><img loading="lazy" src="assets/tara_voicenote_context.png" alt="WhatsApp conversation where Tara's voice notes were received"><div class="cap">Source conversation (WhatsApp, 17 July, 2:14–2:17 PM) where Tara's voice notes with the above direction were received.</div></div>
+  </div>
+</section>
+
+<div class="footer-note">ADHD-friendly note: one block at a time. This tracker updates as each block closes — no need to hold the whole checklist in your head.</div>
+
+</main>
+
+<script>
+(function(){
+  // ---- Mobile sidebar toggle ----
+  var sidebar = document.getElementById('sidebar');
+  var scrim = document.getElementById('scrim');
+  var hbtn = document.getElementById('hamburgerBtn');
+  function openSidebar(){ sidebar.classList.add('open'); scrim.classList.add('show'); }
+  function closeSidebar(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+  if(hbtn){ hbtn.addEventListener('click', function(){
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  }); }
+  if(scrim){ scrim.addEventListener('click', closeSidebar); }
+  document.querySelectorAll('.sidebar .sb-link').forEach(function(a){
+    a.addEventListener('click', function(){ if(window.innerWidth<=900) closeSidebar(); });
+  });
+  
+  // ---- Scroll progress bar (sticky, fills as page scrolls) ----
+  var progressBar = document.getElementById('scrollProgress');
+  function updateScrollProgress(){
+    var scrollTop = window.scrollY || document.documentElement.scrollTop;
+    var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    var pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    if(progressBar) progressBar.style.width = pct + '%';
+  }
+  window.addEventListener('scroll', updateScrollProgress, {passive:true});
+  updateScrollProgress();
+
+  // ---- "How to read this" glow: stop once opened, remember via localStorage ----
+  var ownersEl = document.getElementById('ownersDetails');
+  if(ownersEl){
+    if(localStorage.getItem('trs-owners-read') === '1'){ ownersEl.classList.remove('needs-read'); }
+    ownersEl.addEventListener('toggle', function(){
+      if(ownersEl.open){
+        ownersEl.classList.remove('needs-read');
+        localStorage.setItem('trs-owners-read', '1');
+      }
+    });
+  }
+
+  // ---- Rollup table: hover/tap-to-expand, auto-collapse ----
+  var rollupBox = document.getElementById('rollupCollapsible');
+  if(rollupBox){
+    var collapseTimer;
+    function expandRollup(){ clearTimeout(collapseTimer); rollupBox.classList.add('expanded'); }
+    function scheduleCollapse(){ collapseTimer = setTimeout(function(){ rollupBox.classList.remove('expanded'); }, 400); }
+    rollupBox.addEventListener('mouseenter', expandRollup);
+    rollupBox.addEventListener('mouseleave', scheduleCollapse);
+    rollupBox.addEventListener('focusin', expandRollup);
+    rollupBox.addEventListener('focusout', scheduleCollapse);
+    rollupBox.addEventListener('click', function(){ rollupBox.classList.toggle('expanded'); });
+  }
+
+  // ---- Dark/Light theme toggle ----
+  var themeBtn = document.getElementById('themeToggle');
+  if(themeBtn){
+    themeBtn.addEventListener('click', function(){
+      var current = document.documentElement.getAttribute('data-theme') || 'dark';
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('trs-theme', next);
+    });
+  }
+
+  // ---- Sidebar block collapse/expand ----
+  document.querySelectorAll('.sb-block-toggle').forEach(function(t){
+    t.addEventListener('click', function(){
+      var target = document.getElementById(t.getAttribute('data-target'));
+      t.classList.toggle('collapsed');
+      if(target) target.classList.toggle('collapsed');
+    });
+  });
+
+  // ---- Expand All / Collapse All per block ----
+  document.querySelectorAll('[data-expand]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var wrap = document.getElementById(btn.getAttribute('data-expand'));
+      wrap.querySelectorAll('details.card').forEach(function(d){ d.open = true; });
+    });
+  });
+  document.querySelectorAll('[data-collapse]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var wrap = document.getElementById(btn.getAttribute('data-collapse'));
+      wrap.querySelectorAll('details.card').forEach(function(d){ d.open = false; });
+    });
+  });
+
+  // ---- Cross-reference links: expand target details + scroll ----
+  document.querySelectorAll('a.xref, a[href^="#item-"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var id = a.getAttribute('href');
+      if(!id || id.charAt(0)!=='#') return;
+      var target = document.querySelector(id);
+      if(target && target.tagName === 'DETAILS'){ target.open = true; }
+    });
+  });
+
+  // ---- Scroll-spy via IntersectionObserver ----
+  var sectionIds = ['overview','still-todo','new-findings','top-fixes',
+    'item-1-1','item-1-2','item-1-2b','item-1-3a','item-1-3b','item-1-3c','item-1-4','item-1-5','item-1-6',
+    'item-2-1','item-2-2','item-2-3','item-2-4','item-2-5','item-2-6',
+    'item-3-1','item-3-2','item-3-3','item-3-4','item-3-5',
+    'item-4-1','item-4-2','item-4-3','item-4-4','item-4-5','item-4-6',
+    'item-5-1','item-5-2','item-5-3','item-5-4',
+    'rollup','open-questions','recommendations'];
+  var links = {};
+  sectionIds.forEach(function(id){
+    var l = document.querySelector('.sidebar a[href="#'+id+'"]');
+    if(l) links[id] = l;
+  });
+  function setActive(id){
+    Object.keys(links).forEach(function(k){ links[k].classList.remove('active'); });
+    if(links[id]) links[id].classList.add('active');
+  }
+  if('IntersectionObserver' in window){
+    var observer = new IntersectionObserver(function(entries){
+      var visible = entries.filter(function(en){ return en.isIntersecting; });
+      if(visible.length){
+        visible.sort(function(a,b){ return a.boundingClientRect.top - b.boundingClientRect.top; });
+        setActive(visible[0].target.id);
+      }
+    }, {rootMargin: '-80px 0px -70% 0px', threshold: 0});
+    sectionIds.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) observer.observe(el);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
