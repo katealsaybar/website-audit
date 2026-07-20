@@ -39,6 +39,7 @@ html[data-theme="dark"]{
 }
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
+html,body{overflow-x:hidden;}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
 h1,h2,h3,h4{font-family:var(--font-serif);font-weight:600;line-height:1.25;margin:0 0 .4em;color:var(--ink);}
 a{color:inherit;}
@@ -163,7 +164,7 @@ section.block-section > h2{font-size:22px;padding-bottom:10px;border-bottom:1px 
 .todo-badge{font-size:11px;font-weight:700;color:var(--todo-fg);border:1px dashed var(--todo-bd);border-radius:20px;padding:3px 10px;white-space:nowrap;flex-shrink:0;}
 
 /* ============ STATUS PILLS ============ */
-.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;border:1px solid;white-space:nowrap;letter-spacing:.02em;}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;border:1px solid;white-space:nowrap;letter-spacing:.02em;flex-shrink:0;}
 .pill.pass{background:var(--pass-bg);color:var(--pass-fg);border-color:var(--pass-bd);}
 .pill.fail{background:var(--fail-bg);color:var(--fail-fg);border-color:var(--fail-bd);}
 .pill.partial{background:var(--partial-bg);color:var(--partial-fg);border-color:var(--partial-bd);}
@@ -174,7 +175,7 @@ section.block-section > h2{font-size:22px;padding-bottom:10px;border-bottom:1px 
 details.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow-sm);scroll-margin-top:24px;}
 details.card[open]{box-shadow:var(--shadow-md);}
 details.card.fail-open{border-color:var(--fail-bd);}
-.card > summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;align-items:flex-start;gap:12px;}
+.card > summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;}
 .card > summary::-webkit-details-marker{display:none;}
 .card-num{font-family:var(--font-serif);font-weight:700;font-size:15px;color:var(--ink-soft);flex-shrink:0;min-width:44px;}
 .card-summary-txt{flex-grow:1;font-size:14.5px;color:var(--ink-soft);font-weight:500;}
@@ -201,6 +202,10 @@ details[open] .card-chevron{transform:rotate(180deg);}
 /* ============ TABLES ============ */
 .tbl-wrap{overflow-x:auto;margin:12px 0;border:1px solid var(--border);border-radius:var(--radius-sm);}
 table{border-collapse:collapse;width:100%;font-size:13px;min-width:480px;}
+@media (max-width:600px){
+  table{min-width:0;font-size:12.5px;}
+  thead th,tbody td{padding:8px 9px;word-break:break-word;}
+}
 thead th{background:var(--surface-2);text-align:left;padding:9px 12px;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--border);white-space:nowrap;}
 tbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);vertical-align:top;color:var(--ink-soft);}
 tbody tr:last-child td{border-bottom:none;}
