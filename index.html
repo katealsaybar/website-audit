@@ -109,11 +109,11 @@ html[data-theme="light"] .doc-logo.logo-light{display:inline;}
 .owners summary::-webkit-details-marker{display:none;}
 .owners summary::before{content:'▸ ';color:var(--muted);}
 .owners[open] summary::before{content:'▾ ';}
-@keyframes owners-glow{
-  0%,100%{box-shadow:0 0 0 0 rgba(196,181,253,.5);border-color:var(--lavender-deep);}
-  50%{box-shadow:0 0 0 9px rgba(196,181,253,0);border-color:var(--lavender-deep);}
+@keyframes shot-glow-pass{
+  0%,100%{box-shadow:0 0 0 0 rgba(153,246,228,.55);border-color:var(--pass-fg);}
+  50%{box-shadow:0 0 0 8px rgba(153,246,228,0);border-color:var(--pass-fg);}
 }
-.owners.needs-read{animation:owners-glow 2.2s ease-in-out infinite;}
+.shot.glow-pass{border-width:2px;animation:shot-glow-pass 2.4s ease-in-out infinite;}
 .owners.needs-read summary::after{content:'👀 Please read';font-size:10.5px;font-weight:700;color:var(--lavender-deep);margin-left:10px;letter-spacing:.02em;}
 .owners[open].needs-read{animation:none;}
 .owners ul{margin:12px 0 0;padding-left:20px;font-size:13.5px;color:var(--ink-soft);}
@@ -535,26 +535,50 @@ ul.plain li{margin-bottom:6px;}
     </div>
   </details>
 
-  <details class="card">
-    <summary><span class="card-num">#7</span><span class="card-summary-txt"><strong>Careers page reply-time promise contradicts its own confirmation message</strong></span><span class="card-chevron">▾</span></summary>
+  <details class="card fail-open" open>
+    <summary><span class="card-num">#7</span><span class="card-summary-txt"><strong>Recruitment/Careers funnel automation issues</strong> — reply-time contradiction, wrong path PDFs, sender domain (confirmed 20 July)</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
       <div class="stat-chip-row">
-        <span class="stat-chip"><span class="stat-num">2 weeks</span> promised in the form intro</span>
-        <span class="stat-chip bad"><span class="stat-num">24 hrs</span> promised in the confirmation</span>
+        <span class="stat-chip bad"><span class="stat-num">2 weeks vs 24 hrs</span> reply-time contradiction</span>
+        <span class="stat-chip bad"><span class="stat-num">1/4</span> paths sent the correct PDF</span>
+        <span class="stat-chip warn"><span class="stat-num">wrong</span> sender domain shown</span>
       </div>
-      <p>The Careers application page (tararosesalon.com/en/ae/careers/) tells applicants up front: "Fill in the form and one of our team will reply personally within 2 weeks." After actually submitting the form, though, the on-page confirmation reads: "Thank you. We will be in touch within 24 hours." Two directly conflicting reply-time promises on the same page — one before submission, one after.</p>
-      <p><strong>Why it matters:</strong> whichever number is wrong sets the wrong expectation for applicants — either they're braced for 2 weeks and get a pleasant surprise, or they expect 24 hours and get frustrated when 2 weeks pass with no reply. Recommend Owner B confirm the real turnaround time and align both messages to match.</p>
-      <p>Owner: B (content) — Est: 10–15 min copy fix.</p>
+      <p>Three separate issues surfaced in the same live-test/WhatsApp thread (20 July) — all part of the same recruitment/careers automation funnel, grouped here together instead of as separate findings.</p>
+
+      <p><strong>1) Reply-time promise contradicts itself.</strong> The Careers application page (tararosesalon.com/en/ae/careers/) tells applicants up front: "Fill in the form and one of our team will reply personally within 2 weeks." After actually submitting, the on-page confirmation reads: "Thank you. We will be in touch within 24 hours." David confirmed (20 July) he's aligning this to 2 weeks across all four forms — careers, careers Bahrain, recruitment, and careers — pending Kate's confirmation that's the correct number.</p>
+
+      <p><strong>2) Only 1 of 4 recruitment paths sends the correct PDF.</strong> Kate live-tested all 4 path options on the recruitment landing page, submitting once per path via 4 different emails:</p>
+      <ul class="plain">
+        <li>kate@tararosesalon.com — ticked Path 1 (Employed Stylist) → received the correct "Employed Stylist" PDF ✅</li>
+        <li>marish@tararosesalon.com — ticked Path 2 (Flexible Stylist) → automated reply arrived, no PDF attached ❌</li>
+        <li>katealsaybar@gmail.com — ticked Path 3 (Rent-a-Chair) → automated reply arrived, no PDF attached ❌</li>
+        <li>claude_usage@tararosesalon.com — ticked "Not sure yet, I would like to explore the options" → automated reply arrived, no PDF attached ❌</li>
+      </ul>
+      <p style="font-size:13px;color:var(--muted);">Current source-of-truth brochures (6 files — Employed Stylist, Dubai Flex Stylist, Abu Dhabi Flex Stylist, Rent-a-Chair, TRS Full Overview, Relocation): <a class="link-ext" href="https://drive.google.com/drive/folders/1jSu_gdnmx29qp9N47jcVpRO2jUnVCP0x" target="_blank" rel="noopener">Short Version Brochures — Google Drive folder</a>. These are what the funnel should be sending per path once the routing bug is fixed.</p>
+
+      <p><strong>3) Wrong sender domain.</strong> All 4 test replies show as sent from <strong>recruitment@sales.tararosesalon.com</strong> on the recipient's end — should read <strong>recruitment@tararosesalon.com</strong>.</p>
+
+      <p><strong>Why it matters:</strong> together these mean most applicants get an unclear reply-time promise, no brochure to actually read, and a reply-from address that looks unofficial — undermining trust in the recruitment funnel at the exact moment it needs to build it.</p>
+      <p>Owner: B (copy alignment), David/Dawn (PDF routing + sender domain) — Est: 10–15 min for the copy fix; PDF/domain fixes pending root-cause.</p>
+
       <div class="evi-toggle">
-        <summary><span class="car">▸</span>📎 View evidence</summary>
+        <summary><span class="car">▸</span>📎 View evidence (reply-time screenshot + the 4 path PDFs)</summary>
         <div class="evi-body">
+          <div class="shot" style="margin-bottom:14px;">
+            <img loading="lazy" src="assets/24_hours_application_reply_notice_instead_of_2_weeks.jpeg" alt="Careers page confirmation message showing 24 hours reply time">
+            <div class="cap">tararosesalon.com/en/ae/careers/ — intro promises "within 2 weeks," post-submit confirmation says "within 24 hours."</div>
+          </div>
           <div class="shot-grid">
-            <div class="shot"><img loading="lazy" src="assets/24_hours_application_reply_notice_instead_of_2_weeks.jpeg" alt="Careers page confirmation message showing 24 hours reply time"><div class="cap">tararosesalon.com/en/ae/careers/ — intro copy promises a reply "within 2 weeks," but the post-submit confirmation says "We will be in touch within 24 hours."</div></div>
+            <div class="shot glow-pass"><img loading="lazy" src="assets/Path%20One%20The%20Employed%20Stylist-1.png" alt="Path One - The Employed Stylist PDF preview"><div class="cap"><strong>✅ Path 1 — The Employed Stylist.</strong> Only path confirmed sending correctly (to kate@tararosesalon.com). <a class="link-ext" href="https://drive.google.com/file/d/1cnSxKw3qCklqz3QmI3z2mQSjOphBDDjH/view?usp=drive_link" target="_blank" rel="noopener">📂 current brochure</a></div></div>
+            <div class="shot"><img loading="lazy" src="assets/Path%20Two%20The%20Flexible%20Stylist-1.png" alt="Path Two - The Flexible Stylist PDF preview"><div class="cap"><strong>Path 2 — The Flexible Stylist.</strong> Did not send (tested via marish@tararosesalon.com). <a class="link-ext" href="https://drive.google.com/file/d/1f66XJW0-p1m6crjA-LOBlHcP0ZLtEIT4/view?usp=drive_link" target="_blank" rel="noopener">📂 Dubai brochure</a> · <a class="link-ext" href="https://drive.google.com/file/d/1sGBF9F7vsrjAK1ZFKEwvQIvFR16IjUXI/view?usp=drive_link" target="_blank" rel="noopener">Abu Dhabi brochure</a></div></div>
+            <div class="shot"><img loading="lazy" src="assets/Path%20Three%20Rent-a-Chair-1.png" alt="Path Three - Rent-a-Chair PDF preview"><div class="cap"><strong>Path 3 — Rent-a-Chair.</strong> Did not send (tested via katealsaybar@gmail.com). <a class="link-ext" href="https://drive.google.com/file/d/1UeLSil9uvI95K-DWmqQ-l7GShnmplCHk/view?usp=drive_link" target="_blank" rel="noopener">📂 current brochure</a></div></div>
+            <div class="shot"><img loading="lazy" src="assets/Not%20sure%20yet%20I%20would%20like%20to%20explore%20the%20options-1.png" alt="Not sure yet path PDF preview"><div class="cap"><strong>"Not sure yet" path.</strong> Did not send (tested via claude_usage@tararosesalon.com). <a class="link-ext" href="https://drive.google.com/file/d/1SkvBteL_Y7WVGbltPqRNP2xLICPvVtqh/view?usp=drive_link" target="_blank" rel="noopener">📂 current brochure</a></div></div>
           </div>
         </div>
       </div>
     </div>
   </details>
+
 </section>
 
 <section id="top-fixes" class="block-section">
@@ -1042,7 +1066,7 @@ ul.plain li{margin-bottom:6px;}
       <p><strong>Notes / Evidence:</strong> Of 221 total external links (Screaming Frog External tab):</p>
 <div class="stat-bar" role="img" aria-label="0 of 221 links have genuine marketing UTM tagging"><div class="stat-bar-track"><div class="stat-bar-fill" style="width:1%"></div></div><span class="stat-bar-label">0 / 221 genuinely tagged</span></div>
 <p style="font-size:13px;color:var(--ink-soft);margin-top:10px;">Highest priority — untagged: the brand's own Facebook/Instagram profile links, and the wa.me/wa.link WhatsApp booking CTAs (likely same flow as mobile "Book Now"). No way to attribute which page/source drove a WhatsApp lead — feeds into <a class="xref" href="#item-4-3">4.3</a>/<a class="xref" href="#item-4-4">4.4</a>. Recommend tagging WhatsApp links first.</p>
-      <p><strong>Why it matters:</strong> without tagging, marketing spend can't be tied to bookings. See <a class="xref" href="#top-fixes">Top Fix #14</a>.</p>
+      <p><strong>Why it matters:</strong> without tagging, marketing spend can't be tied to bookings. See <a class="xref" href="#top-fixes">Top Fix #13</a>.</p>
       <div class="evi-toggle">
         <summary><span class="car">▸</span>📎 View full UTM tagging audit</summary>
         <div class="evi-body">
