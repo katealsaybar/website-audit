@@ -170,6 +170,14 @@ section.block-section > h2{font-size:22px;padding-bottom:10px;border-bottom:1px 
 .pill.na{background:var(--na-bg);color:var(--na-fg);border-color:var(--na-bd);}
 .pill.todo{background:transparent;color:var(--todo-fg);border:1px dashed var(--todo-bd);}
 
+
+/* ============ INLINE SCREENSHOT PEEK (Top Fixes) ============ */
+.shot-peek{position:relative;display:inline-block;margin:0 8px;}
+.shot-peek-trigger{font-size:11.5px;font-weight:600;color:var(--lavender-deep);cursor:pointer;text-decoration:underline dotted;white-space:nowrap;}
+.shot-peek-img{display:none;position:absolute;z-index:80;top:100%;left:0;margin-top:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);padding:6px;}
+.shot-peek-img img{width:260px;max-width:70vw;border-radius:6px;display:block;}
+.shot-peek:hover .shot-peek-img,.shot-peek.pinned .shot-peek-img{display:block;}
+
 /* ============ ITEM CARDS ============ */
 details.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow-sm);scroll-margin-top:24px;}
 details.card[open]{box-shadow:var(--shadow-md);}
@@ -192,7 +200,8 @@ details[open] .card-chevron{transform:rotate(180deg);}
 .evi-toggle summary .car{transition:transform .15s;font-size:10px;color:var(--muted);}
 .evi-toggle[open] summary .car{transform:rotate(90deg);}
 .evi-body{padding:4px 14px 16px;}
-.shot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:10px;}
+.shot-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:10px;}
+@media (min-width:601px){.shot-grid{grid-template-columns:repeat(2,1fr);}}
 .shot{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
 .shot img{border:none;border-radius:0;width:100%;}
 .shot .cap{padding:9px 11px;font-size:12px;color:var(--muted);line-height:1.4;}
@@ -557,8 +566,8 @@ ul.plain li{margin-bottom:6px;}
     <li class="top-fix-item"><span class="n">4.</span>tararosesalon.com/sitemap.xml returns 404 (real sitemap lives at /en/sitemap_index.xml).<span class="owner-tag">Owner: A · Est: 15 min · see <a class="xref" href="#item-2-5">2.5</a></span></li>
     <li class="top-fix-item"><span class="n">5.</span>Lexicon violations in live copy — "guarantee" (homepage), "premium"/"upsell" (Mamsha Al Saadiyat).<span class="owner-tag">Flag to Owner B/Tara: approved exception or rewrite? · see <a class="xref" href="#item-2-2">2.2</a></span></li>
     <li class="top-fix-item"><span class="n">6.</span>NEW — Search Console Indexing shows 227 pages with issues vs. only 97 indexed. Biggest chunk: 118 pages with redirects.<span class="owner-tag">Owner: A · Est: 1–2 hrs · see <a class="xref" href="#item-1-3b">1.3b</a></span></li>
-    <li class="top-fix-item"><span class="n">7.</span>NEW — Bahrain GBP listing has compounding issues: hours entered but not displaying publicly, posting turned off, stale "opening January" copy, Facebook tracking ID baked into the saved Website URL.<span class="owner-tag">Owner: C (GBP) + Tara · Est: 30–60 min + possible support ticket · see <a class="xref" href="#item-5-1">5.1</a></span></li>
-    <li class="top-fix-item"><span class="n">8.</span>NEW — Confidence Promise messaging missing from 3 of 4 location pages, and inconsistent everywhere else it appears (4 different phrasings across the brand).<span class="owner-tag">Owner: B · Est: 45–60 min · see <a class="xref" href="#item-5-4">5.4/5.5</a></span></li>
+    <li class="top-fix-item"><span class="n">7.</span>NEW — Bahrain GBP listing has compounding issues: hours entered but not displaying publicly, posting turned off, stale "opening January" copy, Facebook tracking ID baked into the saved Website URL. <span class="shot-peek"><span class="shot-peek-trigger">📷 hover to preview</span><span class="shot-peek-img"><img loading="lazy" src="assets/gbp-bahrain-incognito.png" alt="Bahrain GBP incognito search result"></span></span><span class="owner-tag">Owner: C (GBP) + Tara · Est: 30–60 min + possible support ticket · see <a class="xref" href="#item-5-1">5.1</a></span></li>
+    <li class="top-fix-item"><span class="n">8.</span>NEW — Confidence Promise messaging missing from 3 of 4 location pages, and inconsistent everywhere else it appears (4 different phrasings across the brand). <span class="shot-peek"><span class="shot-peek-trigger">📷 hover to preview</span><span class="shot-peek-img"><img loading="lazy" src="assets/cp_homepage.png" alt="Homepage Ctrl+F search showing Confidence Promise matches"></span></span><span class="owner-tag">Owner: B · Est: 45–60 min · see <a class="xref" href="#item-5-4">5.4/5.5</a></span></li>
     <li class="top-fix-item"><span class="n">9.</span>RESOLVED (17 July) — Old logo asset on Facebook. All 4 branch pages were showing the old circular cream/pink badge logo instead of the current black wordmark. Kate updated all 4 profile pictures live.
       <div class="evi-toggle">
         <summary><span class="car">▸</span>📎 View before/after logo evidence</summary>
@@ -1393,6 +1402,20 @@ ul.plain li{margin-bottom:6px;}
       Array.from(tr.children).forEach(function(td, i){
         if(headers[i]) td.setAttribute('data-label', headers[i]);
       });
+    });
+  });
+
+  
+  // ---- Top Fix screenshot peek: click to pin/unpin (for touch, since hover doesn't exist there) ----
+  document.querySelectorAll('.shot-peek-trigger').forEach(function(t){
+    t.addEventListener('click', function(e){
+      e.stopPropagation();
+      t.closest('.shot-peek').classList.toggle('pinned');
+    });
+  });
+  document.addEventListener('click', function(e){
+    document.querySelectorAll('.shot-peek.pinned').forEach(function(el){
+      if(!el.contains(e.target)) el.classList.remove('pinned');
     });
   });
 
