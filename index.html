@@ -80,7 +80,8 @@ html[data-theme="light"] .theme-icon-light{display:inline;}
 .sb-pill.p-partial{background:var(--partial-fg);} .sb-pill.p-na{background:var(--na-fg);}
 .sb-pill.p-todo{background:var(--todo-fg);}
 
-.shell{margin-left:var(--sidebar-w);padding:40px 48px 100px;max-width:980px;}
+.shell{margin-left:var(--sidebar-w);padding:40px 48px 100px;}
+.shell-inner{max-width:980px;margin:0 auto;}
 .sidebar-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:45;}
 
 @media (max-width:900px){
@@ -149,6 +150,12 @@ section.block-section > h2{font-size:22px;padding-bottom:10px;border-bottom:1px 
 .callout li{margin-bottom:8px;}
 .callout a.xref{font-weight:600;text-decoration:underline;}
 
+.stat-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;}
+.stat-chip{display:inline-flex;align-items:baseline;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 10px;font-size:12.5px;color:var(--ink-soft);font-weight:500;}
+.stat-chip .stat-num{font-family:var(--font-serif);font-weight:700;font-size:15px;color:var(--lavender-deep);}
+.stat-chip.warn .stat-num{color:var(--partial-fg);}
+.stat-chip.bad .stat-num{color:var(--fail-fg);}
+
 .todo-list{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:10px;}
 .todo-item{background:var(--surface);border:1px dashed var(--todo-bd);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:12px;}
 .todo-item a{text-decoration:none;font-weight:600;color:var(--ink);flex-grow:1;}
@@ -214,6 +221,7 @@ ul.plain li{margin-bottom:6px;}
 @media print{
   .sidebar,.topbar,.sidebar-scrim,.block-actions,.hamburger{display:none !important;}
   .shell{margin-left:0;padding:0;max-width:100%;}
+  .shell-inner{max-width:100%;}
   details{display:block !important;}
   details.card, .evi-toggle, .owners{border:1px solid #ccc !important;box-shadow:none !important;break-inside:avoid;}
   .card-chevron, .evi-toggle .car{display:none;}
@@ -304,6 +312,7 @@ ul.plain li{margin-bottom:6px;}
 </nav>
 
 <main class="shell">
+<div class="shell-inner">
 
 <header class="doc-header" id="overview">
   <div class="doc-header-top">
@@ -343,7 +352,6 @@ ul.plain li{margin-bottom:6px;}
   <h3>🚨 Critical — needs attention today</h3>
   <ul>
     <li><strong>Booking chat widget fails to submit.</strong> 100% of visitors hitting the primary "Book Now" CTA on desktop hit a dead end (red "Failed" / "Try Again!!"). See <a class="xref" href="#item-4-6">4.6 Booking Channel Test</a> and <a class="xref" href="#top-fixes">Top Fix #2</a>.</li>
-    <li><strong>"Janabiyah Quiz Hijack"</strong> — a giveaway/quiz popup takes over /en/bh/locations/janabiyah/ on load, blocking location/booking access in 11 of ~15 sampled sessions. See <a class="xref" href="#item-3-5">3.5 Mobile Session Review</a>.</li>
   </ul>
 </div>
 
@@ -364,6 +372,9 @@ ul.plain li{margin-bottom:6px;}
   <details class="card">
     <summary><span class="card-num">#1</span><span class="card-summary-txt"><strong>Booking chat widget fails to submit</strong> — CRITICAL</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
+      <div class="stat-chip-row">
+        <span class="stat-chip bad"><span class="stat-num">100%</span> booking attempts fail</span>
+      </div>
       <p>The "Book Now" button opens a chat widget (not a Phorest deep link — already known from Top Fix #2). New finding: the widget itself is broken. Submitting the contact form returns a red "Failed" status with a "Try Again!!" prompt. Confirmed on two separate Google accounts, so it's not an account-specific issue — it's failing for every visitor right now.</p>
       <p><strong>Why it matters:</strong> this isn't just an extra step anymore — it's a dead end. Right now, 100% of visitors trying to book through the primary CTA hit a wall with no fallback path.</p>
       <p>Owner: A (dev) — Est: urgent, same-day if possible. See <a class="xref" href="#item-4-6">4.6</a>.</p>
@@ -373,7 +384,17 @@ ul.plain li{margin-bottom:6px;}
   <details class="card">
     <summary><span class="card-num">#2</span><span class="card-summary-txt"><strong>Google Search Console — RESOLVED</strong> (was a wrong-account issue, not missing setup)</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
-      <p>Initial attempts under two different Google/GoDaddy accounts ("TK" personal, then a mixed search) surfaced Google's "Welcome" screen, suggesting no verified property existed. Investigation traced this to simply being logged into the wrong accounts — GoDaddy DNS actually held four separate google-site-verification TXT records (unclear which service each maps to), and Yoast SEO on the live WordPress site already had a working Google verification code in its Site Connections field. David (dev contact) granted Kate access to the actual long-standing Search Console property under kate@tararosesalon.com — it has been live and collecting data since mid-April 2026 (3,614 total web search clicks recorded).</p>
+      <div class="stat-chip-row">
+        <span class="stat-chip"><span class="stat-num">4</span> DNS TXT records found</span>
+        <span class="stat-chip"><span class="stat-num">3,614</span> clicks recorded since April</span>
+      </div>
+      <p>Investigation traced the earlier "no verified property" scare to simply being logged into the wrong accounts.</p>
+      <ul class="plain">
+        <li>Initial attempts under two different Google/GoDaddy accounts ("TK" personal, then a mixed search) surfaced Google's "Welcome" screen, suggesting no verified property existed.</li>
+        <li>GoDaddy DNS actually held four separate google-site-verification TXT records (unclear which service each maps to).</li>
+        <li>Yoast SEO on the live WordPress site already had a working Google verification code in its Site Connections field.</li>
+        <li>David (dev contact) granted Kate access to the actual long-standing Search Console property under kate@tararosesalon.com — live and collecting data since mid-April 2026 (3,614 total web search clicks recorded).</li>
+      </ul>
       <p><strong>Result:</strong> <a class="xref" href="#item-1-3a">1.3</a> is NOT blocked — it was simply inaccessible due to account confusion. Real data now pulled below.</p>
       <p><strong>Action for handover docs:</strong> note kate@tararosesalon.com as the account with GSC access, and log David as the technical contact who can grant/adjust access to Analytics and Search Console going forward.</p>
       <div class="evi-toggle">
@@ -390,6 +411,11 @@ ul.plain li{margin-bottom:6px;}
   <details class="card">
     <summary><span class="card-num">#3</span><span class="card-summary-txt"><strong>GBP Freshness + Confidence Promise cross-channel consistency</strong> — findings from direct GBP backend review</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
+      <div class="stat-chip-row">
+        <span class="stat-chip warn"><span class="stat-num">27</span> days since last GBP post</span>
+        <span class="stat-chip bad"><span class="stat-num">4</span> different guarantee phrasings</span>
+        <span class="stat-chip bad"><span class="stat-num">3/4</span> location pages missing it entirely</span>
+      </div>
       <h4>5.1 — Posts stale, batch-scheduled, not weekly</h4>
       <ul class="plain">
         <li>All 4 UAE locations (Al Quoz, Khalifa City A, Motor City, Saadiyat) show their most recent post dated June 19, 2026 — identical across all four, confirming a one-time batch post rather than ongoing weekly management. 27 days stale as of 7/16.</li>
@@ -428,6 +454,12 @@ ul.plain li{margin-bottom:6px;}
   <details class="card">
     <summary><span class="card-num">#4</span><span class="card-summary-txt"><strong>Local pack ranking &amp; AI search visibility</strong> now tested + new risk flags surfaced</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
+      <div class="stat-chip-row">
+        <span class="stat-chip"><span class="stat-num">2/4</span> locations ranked #1</span>
+        <span class="stat-chip bad"><span class="stat-num">#5</span> Motor City local pack rank</span>
+        <span class="stat-chip"><span class="stat-num">6/8</span> AI queries surfaced (ChatGPT/Gemini)</span>
+        <span class="stat-chip bad"><span class="stat-num">2/8</span> AI queries surfaced (Perplexity)</span>
+      </div>
       <p>Source: Kate's Week 27 Ops &amp; Performance Report, 29 Jun–5 Jul.</p>
       <h4>5.2 Local pack — directional read (16 July, "[location] + hair salon")</h4>
       <ul class="plain">
@@ -452,28 +484,57 @@ ul.plain li{margin-bottom:6px;}
   <details class="card">
     <summary><span class="card-num">#5</span><span class="card-summary-txt"><strong>GA4 tracking</strong> — firing, but to the wrong property, and the fix can't go live yet</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
-      <p><strong>Root cause:</strong> the site's live GTM container (GTM-N6KPVCNF, hardcoded in the theme file inc/analytics-pixels.php via the wp_head hook) is actively firing and sending real pageview hits — but to the wrong GA4 property (G-4QX6GCJM8K) instead of the business's actual property, "Tara Rose Hair and Beauty" (G-7W4EZVYKJV). That's why nothing was reaching DebugView for the correct property even though tracking was technically working.</p>
-      <p><strong>Access gap:</strong> the Google account with GA4 access does NOT have edit rights to the GTM-N6KPVCNF container itself — appears managed separately, possibly by a prior developer/agency. A separate, correctly-configured Google tag (gtag.js, G-7W4EZVYKJV / GT-NC6LBV5) exists and is accessible, but was never installed on the live site — GA4's own diagnostics flagged it "Urgent," not detected in 48+ hours.</p>
-      <p><strong>Workaround attempted:</strong> confirmed the site is hosted on WordPress, then added the correct gtag.js snippet directly into inc/analytics-pixels.php, alongside the existing broken GTM code, without removing anything. The edit saved successfully and was confirmed present in the saved file.</p>
-      <p><strong>Blocked at:</strong> even after a full LiteSpeed cache purge (including QUIC.cloud queue clearing) and an opcode cache purge, fresh cache-bypassed requests still returned the old output without the new tag — pointing to a server-level caching or PHP OPcache layer not clearable from the WordPress dashboard alone.</p>
-      <p><strong>Status: UNRESOLVED.</strong> The fix is staged and saved correctly at the code level but isn't yet reflected live. Resolving this will likely need server/hosting-level access. Recommend flagging to whoever manages the hosting/server infrastructure. See <a class="xref" href="#item-3-1">3.1</a>.</p>
-    </div>
-  </details>
-
-  <details class="card fail-open" open>
-    <summary><span class="card-num">#6</span><span class="card-summary-txt"><strong>"Janabiyah Quiz Hijack"</strong> — CRITICAL (found via 3.5 Mobile Session Review)</span><span class="card-chevron">▾</span></summary>
-    <div class="card-body">
-      <p>A full CSV export of 300 Clarity recordings (237 unique sessions) was reviewed for 3.5 in place of the checklist's literal Page=/booking filter, since no /booking page exists on the site. On /en/bh/locations/janabiyah/, a giveaway/quiz popup takes over the page almost immediately on load in 11 of roughly 15 sessions reviewed in detail — every affected session has only 1 page view, meaning users never reach real location or booking content. Traffic is mostly UK-based (Instagram link-in-bio and Linktree), which points to likely internal QA testing rather than lost real leads — but the bug itself is independently reproducible: users rage-click or dead-click 6 to 8 times on non-responsive banner elements in the first 5–15 seconds before the quiz form engages, then get funneled into a multi-step quiz ending in a phone-number capture field, with no confirmed Submit in any sampled recording.</p>
-      <p>Also found on AE pages during the same review: a recurring "Can't find variable: beTracker" console error (4 sessions) — likely a broken or missing analytics/marketing script, cross-ref <a class="xref" href="#item-1-6">1.6</a> — and a pattern of high-intent users on the Abu Dhabi location pages repeatedly tapping Book Now/Chat 4–5 times in one session without a visibly confirmed booking, worth a manual video watch alongside <a class="xref" href="#item-4-2">4.2</a>/<a class="xref" href="#item-4-5">4.5</a>.</p>
-      <p>Owner: A (dev) — Est: urgent for the popup, since it fully blocks location/booking access on that page. Full detail in <a class="xref" href="#item-3-5">3.5</a>.</p>
+      <div class="stat-chip-row">
+        <span class="stat-chip bad"><span class="stat-num">0</span> hits reaching the right GA4 property</span>
+        <span class="stat-chip warn"><span class="stat-num">48+ hrs</span> flagged "Urgent" and undetected</span>
+      </div>
+      <div class="tbl-wrap"><table><thead><tr><th>Field</th><th>Detail</th></tr></thead><tbody>
+        <tr><td>Root cause</td><td>The site's live GTM container (GTM-N6KPVCNF, hardcoded in the theme file inc/analytics-pixels.php via the wp_head hook) is actively firing and sending real pageview hits — but to the wrong GA4 property (G-4QX6GCJM8K) instead of the business's actual property, "Tara Rose Hair and Beauty" (G-7W4EZVYKJV). That's why nothing was reaching DebugView for the correct property even though tracking was technically working.</td></tr>
+        <tr><td>Access gap</td><td>The Google account with GA4 access does NOT have edit rights to the GTM-N6KPVCNF container itself — appears managed separately, possibly by a prior developer/agency. A separate, correctly-configured Google tag (gtag.js, G-7W4EZVYKJV / GT-NC6LBV5) exists and is accessible, but was never installed on the live site — GA4's own diagnostics flagged it "Urgent," not detected in 48+ hours.</td></tr>
+        <tr><td>Workaround attempted</td><td>Confirmed the site is hosted on WordPress, then added the correct gtag.js snippet directly into inc/analytics-pixels.php, alongside the existing broken GTM code, without removing anything. The edit saved successfully and was confirmed present in the saved file.</td></tr>
+        <tr><td>Blocked at</td><td>Even after a full LiteSpeed cache purge (including QUIC.cloud queue clearing) and an opcode cache purge, fresh cache-bypassed requests still returned the old output without the new tag — pointing to a server-level caching or PHP OPcache layer not clearable from the WordPress dashboard alone.</td></tr>
+        <tr><td><strong>Status</strong></td><td><strong>UNRESOLVED.</strong> The fix is staged and saved correctly at the code level but isn't yet reflected live. Resolving this will likely need server/hosting-level access. Recommend flagging to whoever manages the hosting/server infrastructure. See <a class="xref" href="#item-3-1">3.1</a>.</td></tr>
+      </tbody></table></div>
     </div>
   </details>
 
   <details class="card">
-    <summary><span class="card-num">#7</span><span class="card-summary-txt">Full Screaming Frog crawl (1.4/1.5) + UTM tagging audit (4.1) completed — confirms and scales up earlier findings</span><span class="card-chevron">▾</span></summary>
+    <summary><span class="card-num">#6</span><span class="card-summary-txt">Full Screaming Frog crawl (1.4/1.5) + UTM tagging audit (4.1) completed — confirms and scales up earlier findings</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
-      <p>The full crawl (471/471 URLs, 100%) confirms 14 real 404s, all Bahrain /en/bh/services/... pages, and 7 unique 2-hop redirect chains tracing to the same /en/ae/ locale migration already flagged. Site-wide image audit: 28 of 90 images (31%) missing alt text, 7 over 200KB, 0 in WebP/AVIF. Separately, the 1.3b Search Console indexing drilldown triaged the much larger 118-redirect / 24-404 set down to individual URLs: ~78 of the 118 redirects share the same 2-hop chain root cause at far greater scale, and a new, previously undocumented group of 7 Arabic (/ar/) locale stub URLs surfaced — flag to Owner A/Tara on whether an Arabic site is planned. UTM audit (4.1): of 221 external links, only 2 carry any UTM (both Instagram's own auto-generated embed params) — effectively 0 of 221 have genuine marketing tagging, including the brand's own Facebook/Instagram profile links and the wa.me/wa.link WhatsApp booking CTAs, which removes any way to attribute which page/source drives a WhatsApp booking lead.</p>
+      <div class="stat-chip-row">
+        <span class="stat-chip"><span class="stat-num">471/471</span> URLs crawled</span>
+        <span class="stat-chip bad"><span class="stat-num">14</span> real 404s</span>
+        <span class="stat-chip warn"><span class="stat-num">~78</span> redirect chains, 1 root cause</span>
+        <span class="stat-chip bad"><span class="stat-num">0/221</span> links UTM-tagged</span>
+      </div>
+      <ul class="plain">
+        <li>Full crawl (471/471 URLs, 100%) confirms 14 real 404s, all Bahrain /en/bh/services/... pages, and 7 unique 2-hop redirect chains tracing to the same /en/ae/ locale migration already flagged.</li>
+        <li>Site-wide image audit: 28 of 90 images (31%) missing alt text, 7 over 200KB, 0 in WebP/AVIF.</li>
+        <li>The 1.3b Search Console indexing drilldown triaged the much larger 118-redirect / 24-404 set down to individual URLs: ~78 of the 118 redirects share the same 2-hop chain root cause at far greater scale, and a new, previously undocumented group of 7 Arabic (/ar/) locale stub URLs surfaced — flag to Owner A/Tara on whether an Arabic site is planned.</li>
+        <li>UTM audit (4.1): of 221 external links, only 2 carry any UTM (both Instagram's own auto-generated embed params) — effectively 0 of 221 have genuine marketing tagging, including the brand's own Facebook/Instagram profile links and the wa.me/wa.link WhatsApp booking CTAs, which removes any way to attribute which page/source drives a WhatsApp booking lead.</li>
+      </ul>
       <p>Owner: A (crawl/redirect fixes), B (UTM tagging) — Est: 2–3 hrs for the redirect-link cleanup, 30–45 min to tag the WhatsApp CTAs first. Full detail in <a class="xref" href="#item-1-4">1.4</a>, <a class="xref" href="#item-1-5">1.5</a>, <a class="xref" href="#item-1-3b">1.3b</a>, and <a class="xref" href="#item-4-1">4.1</a>.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span class="card-num">#7</span><span class="card-summary-txt"><strong>Careers page reply-time promise contradicts its own confirmation message</strong></span><span class="card-chevron">▾</span></summary>
+    <div class="card-body">
+      <div class="stat-chip-row">
+        <span class="stat-chip"><span class="stat-num">2 weeks</span> promised in the form intro</span>
+        <span class="stat-chip bad"><span class="stat-num">24 hrs</span> promised in the confirmation</span>
+      </div>
+      <p>The Careers application page (tararosesalon.com/en/ae/careers/) tells applicants up front: "Fill in the form and one of our team will reply personally within 2 weeks." After actually submitting the form, though, the on-page confirmation reads: "Thank you. We will be in touch within 24 hours." Two directly conflicting reply-time promises on the same page — one before submission, one after.</p>
+      <p><strong>Why it matters:</strong> whichever number is wrong sets the wrong expectation for applicants — either they're braced for 2 weeks and get a pleasant surprise, or they expect 24 hours and get frustrated when 2 weeks pass with no reply. Recommend Owner B confirm the real turnaround time and align both messages to match.</p>
+      <p>Owner: B (content) — Est: 10–15 min copy fix.</p>
+      <div class="evi-toggle">
+        <summary><span class="car">▸</span>📎 View evidence</summary>
+        <div class="evi-body">
+          <div class="shot-grid">
+            <div class="shot"><img loading="lazy" src="assets/24_hours_application_reply_notice_instead_of_2_weeks.jpeg" alt="Careers page confirmation message showing 24 hours reply time"><div class="cap">tararosesalon.com/en/ae/careers/ — intro copy promises a reply "within 2 weeks," but the post-submit confirmation says "We will be in touch within 24 hours."</div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </details>
 </section>
@@ -520,10 +581,9 @@ ul.plain li{margin-bottom:6px;}
       </div>
       <span class="owner-tag">Owner: B · Est: 15–30 min to fix the field; longer if switching to a proper multi-location setup</span>
     </li>
-    <li class="top-fix-item"><span class="n">11.</span>NEW (17 July) — "Janabiyah Quiz Hijack": popup takes over /en/bh/locations/janabiyah/ on load, blocking access in 11 of ~15 sampled sessions. Likely internal QA traffic, but independently reproducible.<span class="owner-tag">Owner: A, urgent · see <a class="xref" href="#item-3-5">3.5</a></span></li>
-    <li class="top-fix-item"><span class="n">12.</span>NEW (17 July) — Recurring "Can't find variable: beTracker" console error on multiple AE service/hair pages, likely a broken analytics/marketing script.<span class="owner-tag">Owner: A · Est: 30–60 min to trace · cross-ref <a class="xref" href="#item-1-6">1.6</a>, <a class="xref" href="#item-4-3">4.3</a></span></li>
-    <li class="top-fix-item"><span class="n">13.</span>NEW (17 July, via 1.3b) — ~78 of the 118 Search Console redirect URLs share one root cause: a 2-hop chain through "/education/beauty-insights/". Also: 7 unexplained Arabic (/ar/) locale stubs, and staging.tararosesalon.com is indexed by Google and should be noindexed/password-protected.<span class="owner-tag">Owner: A · Est: 1–2 hrs redirect cleanup, 15 min staging fix · see <a class="xref" href="#item-1-3b">1.3b</a></span></li>
-    <li class="top-fix-item"><span class="n">14.</span>NEW (17 July, via 4.1) — 0 of 221 external links carry genuine marketing UTM tagging, including the WhatsApp booking CTAs — no way to attribute which page/source drives a WhatsApp lead.<span class="owner-tag">Owner: B · Est: 30–45 min to tag the WhatsApp links first · see <a class="xref" href="#item-4-1">4.1</a></span></li>
+    <li class="top-fix-item"><span class="n">11.</span>NEW (17 July) — Recurring "Can't find variable: beTracker" console error on multiple AE service/hair pages, likely a broken analytics/marketing script.<span class="owner-tag">Owner: A · Est: 30–60 min to trace · cross-ref <a class="xref" href="#item-1-6">1.6</a>, <a class="xref" href="#item-4-3">4.3</a></span></li>
+    <li class="top-fix-item"><span class="n">12.</span>NEW (17 July, via 1.3b) — ~78 of the 118 Search Console redirect URLs share one root cause: a 2-hop chain through "/education/beauty-insights/". Also: 7 unexplained Arabic (/ar/) locale stubs, and staging.tararosesalon.com is indexed by Google and should be noindexed/password-protected.<span class="owner-tag">Owner: A · Est: 1–2 hrs redirect cleanup, 15 min staging fix · see <a class="xref" href="#item-1-3b">1.3b</a></span></li>
+    <li class="top-fix-item"><span class="n">13.</span>NEW (17 July, via 4.1) — 0 of 221 external links carry genuine marketing UTM tagging, including the WhatsApp booking CTAs — no way to attribute which page/source drives a WhatsApp lead.<span class="owner-tag">Owner: B · Est: 30–45 min to tag the WhatsApp links first · see <a class="xref" href="#item-4-1">4.1</a></span></li>
   </ol>
 </section>
 
@@ -777,7 +837,7 @@ ul.plain li{margin-bottom:6px;}
   <details class="card fail-open" id="item-1-6" open>
     <summary><span class="card-num">1.6</span><span class="card-summary-txt">HTTPS / Console errors</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
-      <p><strong>Notes / Evidence:</strong> Live console check completed 7/17 (2:00–2:10 PM) on Home, Services, Contact, Locations, and the chat widget. Zero mixed-content/HTTP issues — clean. But every page throws the same 5 [LC Tracking ERROR] messages, all pointing to a missing data-tracking-id attribute on the Live Chat script tag (required attribute not found; failed to initialize; external tracking failed). Likely the same root cause behind the broken booking widget submit — see <a class="xref" href="#top-fixes">Top Fix #2</a> / <a class="xref" href="#item-4-6">4.6</a>.</p>
+      <p><strong>Notes / Evidence:</strong> Live console check completed 7/17 (2:00–2:10 PM PHT / 10:00–10:10 AM UAE) on Home, Services, Contact, Locations, and the chat widget. Zero mixed-content/HTTP issues — clean. But every page throws the same 5 [LC Tracking ERROR] messages, all pointing to a missing data-tracking-id attribute on the Live Chat script tag (required attribute not found; failed to initialize; external tracking failed). Likely the same root cause behind the broken booking widget submit — see <a class="xref" href="#top-fixes">Top Fix #2</a> / <a class="xref" href="#item-4-6">4.6</a>.</p>
       <p><strong>Why it matters:</strong> Mixed content triggers browser security warnings and can silently block resources.</p>
       <div class="evi-toggle">
         <summary><span class="car">▸</span>📷 Click here for console screenshots (5 pages, before/after refresh)</summary>
@@ -884,7 +944,7 @@ ul.plain li{margin-bottom:6px;}
     <summary><span class="card-num">3.2</span><span class="card-summary-txt">Microsoft Clarity install</span><span class="pill pass">DONE — PASS</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
       <p><strong>Notes / Evidence:</strong> Confirmed fully working and populated. Script added via a GeneratePress Elements Hook (wp_head, Display Rules set to "Entire Site"), LiteSpeed cache purged. Verified live: <code>window.clarity</code> returns a function on tararosesalon.com, and the clarity.ms tag is present in the page &lt;head&gt;. Dashboard is now live and populated: <strong>259 sessions, 207 unique users</strong>, with Rage Clicks, Dead Clicks, and Excessive Scrolling data all flowing — this is the data source behind <a class="xref" href="#item-3-5">3.5</a>'s mobile session review below.</p>
-      <p><strong>Why it matters:</strong> This is the raw session-recording data feeding the Janabiyah quiz-hijack and beTracker findings — a working install is the foundation for all of Block 3's behavioural analysis.</p>
+      <p><strong>Why it matters:</strong> This is the raw session-recording data feeding the beTracker findings below — a working install is the foundation for all of Block 3's behavioural analysis.</p>
     </div>
   </details>
 
@@ -908,7 +968,7 @@ ul.plain li{margin-bottom:6px;}
     <summary><span class="card-num">3.5</span><span class="card-summary-txt">Mobile session review (Clarity)</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
       <p><strong>Notes / Evidence:</strong> Full CSV export of 300 recordings (237 unique sessions, last 3 days) reviewed instead of the checklist's literal Page=/booking filter, since no /booking page exists on the site (booking is external via Phorest/chat/WhatsApp — cross-logged against <a class="xref" href="#item-4-6">4.6</a>). ~15 sessions reviewed in detail, prioritized by click count/duration on services, locations, and pricing pages.</p>
-      <p><strong>Critical finding:</strong> an "Janabiyah Quiz Hijack" — a giveaway/quiz popup takes over /en/bh/locations/janabiyah/ almost immediately on load in 11 of ~15 sessions, blocking access to real location/booking content; traffic is mostly UK-based (Instagram/Linktree), likely internal QA testing but the bug is independently reproducible. Also found: a recurring "Can't find variable: beTracker" console error across multiple AE service/hair pages (cross-ref <a class="xref" href="#item-1-6">1.6</a> — likely a broken analytics/marketing script, could silently affect conversion tracking feeding <a class="xref" href="#item-4-3">4.3</a>/GA4); and a pattern of high-intent users on the Abu Dhabi AE location pages repeatedly tapping Book Now/Chat (4–5 times in one session) without a visibly confirmed booking completion — not a clear bug from logs alone, flagged for a manual video watch alongside <a class="xref" href="#item-4-2">4.2</a>/<a class="xref" href="#item-4-5">4.5</a>.</p>
+      <p><strong>Key finding:</strong> a recurring "Can't find variable: beTracker" console error across multiple AE service/hair pages (cross-ref <a class="xref" href="#item-1-6">1.6</a> — likely a broken analytics/marketing script, could silently affect conversion tracking feeding <a class="xref" href="#item-4-3">4.3</a>/GA4); and a pattern of high-intent users on the Abu Dhabi AE location pages repeatedly tapping Book Now/Chat (4–5 times in one session) without a visibly confirmed booking completion — not a clear bug from logs alone, flagged for a manual video watch alongside <a class="xref" href="#item-4-2">4.2</a>/<a class="xref" href="#item-4-5">4.5</a>.</p>
       <p><strong>Why it matters:</strong> real-user behaviour is the only way to catch a booking-blocking bug like this that automated checks would miss entirely.</p>
 
       <div class="evi-toggle">
@@ -916,19 +976,7 @@ ul.plain li{margin-bottom:6px;}
         <div class="evi-body">
           <p><strong>Method / sampling note:</strong> a full CSV export of 300 recordings (237 unique sessions, last 3 days) was pulled from Clarity. Per the checklist instruction, a random-style sample was reviewed rather than all sessions. Sessions were prioritized by highest click count and duration among mobile sessions exiting on services, locations, or pricing pages, used as a proxy since the site has no dedicated /booking URL. Roughly 15 sessions had their full event logs reviewed in detail.</p>
 
-          <p><strong>Finding 1 — "Janabiyah Quiz Hijack" (Critical)</strong></p>
-          <ul class="plain">
-            <li>Affected page: /en/bh/locations/janabiyah/</li>
-            <li>Sessions affected (of sample): 11 of roughly 15 reviewed sessions landing on this page</li>
-            <li>Traffic source: Instagram link-in-bio and Linktree, mostly UK-based devices (Liverpool, Caterham). Flagged as likely internal QA testing rather than lost real leads, but the underlying bug is independently reproducible and confirmed by this pattern.</li>
-            <li>What happens: a giveaway/quiz popup ("Every founding member...", "Enter to Win &amp; Shape the...") takes over the page almost immediately on load. Every affected session has only 1 page view, meaning users never reach real location or booking content.</li>
-            <li>Observed friction: in the first 5 to 15 seconds, users rage-click or dead-click 6 to 8 times on two elements, "Complete [X] BHD Transformation" and "PLUS: Fabulous Women..." banners, before the quiz form fully engages. Session fwdfxa (00:08-00:23) and 1o7ox9g (00:07-00:08) both show an initial dead click plus repeated taps on the same non-responsive banner text.</li>
-            <li>Then funneled into: a multi-step quiz (hair concerns, appointment frequency, occupation) ending in a phone-number capture field and a Next button. Recording windows end before a final Submit is confirmed in every sampled case, so completion rate is unknown.</li>
-            <li>Session evidence: fwdfxa, 1qm5zg7, 96d1ld, zb7wla, 1yyacyp, 2lmwkc, g73l32, o5injt, 5nys5e, 1o7ox9g</li>
-            <li>Recommended checklist status: Fail, high-priority fix. Popup should not block access to location info or the Book Now CTA on first load.</li>
-          </ul>
-
-          <p><strong>Finding 2 — Recurring "beTracker" JavaScript Error</strong></p>
+          <p><strong>Finding 1 — Recurring "beTracker" JavaScript Error</strong></p>
           <ul class="plain">
             <li>Cross-reference: also logged against <a class="xref" href="#item-1-6">Item 1.6</a>, HTTPS + console errors.</li>
             <li>Error text: "Can't find variable: beTracker" fires on page load across multiple AE service/hair pages.</li>
@@ -938,7 +986,7 @@ ul.plain li{margin-bottom:6px;}
             <li>Recommended checklist status: Fail (console not clean), flag for dev.</li>
           </ul>
 
-          <p><strong>Finding 3 — High Booking Intent, But Repeated Attempts on AE Location Pages</strong></p>
+          <p><strong>Finding 2 — High Booking Intent, But Repeated Attempts on AE Location Pages</strong></p>
           <ul class="plain">
             <li>Affected pages: /en/ae/locations/abu-dhabi/mamsha-al-saadiyat/, /en/ae/locations/abu-dhabi/khalifa-city/</li>
             <li>Pattern: users show high intent (Clarity-tagged "High") and repeatedly trigger the Book smart event and Book Now clicks, sometimes 4 to 5 times within a single session (e.g. session 62a207: 5 Book Now taps across 7 minutes, spanning 3 pages), plus multiple Chat with Us clicks, without a visibly confirmed booking completion in the recording.</li>
@@ -951,7 +999,7 @@ ul.plain li{margin-bottom:6px;}
           <div class="tbl-wrap"><table><thead><tr><th>Field</th><th>Content</th></tr></thead><tbody>
             <tr><td>Status</td><td>Fail</td></tr>
             <tr><td>Sessions reviewed</td><td>Roughly 15 of 237 total mobile-eligible sessions (random-priority sample, not exhaustive, see method note above)</td></tr>
-            <tr><td>Findings</td><td>1. Janabiyah quiz popup blocks location/booking access (critical), 11 sessions. 2. Recurring beTracker JS console error on AE pages, cross-ref 1.6. 3. Repeated Book Now/Chat attempts on AE location pages suggest booking-form friction, cross-ref 4.2, 4.5.</td></tr>
+            <tr><td>Findings</td><td>1. Recurring beTracker JS console error on AE pages, cross-ref 1.6. 2. Repeated Book Now/Chat attempts on AE location pages suggest booking-form friction, cross-ref 4.2, 4.5.</td></tr>
             <tr><td>Cross-references</td><td>Items 1.6, 4.2, 4.3, 4.5, 4.6</td></tr>
           </tbody></table></div>
         </div>
@@ -1059,16 +1107,24 @@ ul.plain li{margin-bottom:6px;}
   <details class="card fail-open" id="item-4-6" open>
     <summary><span class="card-num">4.6</span><span class="card-summary-txt">Booking channel test (reframed from Phorest deep-link, per actual ops flow)</span><span class="pill fail">FAIL</span><span class="card-chevron">▾</span></summary>
     <div class="card-body">
-      <p><strong>Notes / Evidence:</strong> Confirmed via live screenshot 7/17 (1:55 PM): "Book Now" opens the in-site chat widget, not Phorest — Phorest is correctly internal/manual-only per Kate's actual booking flow (new leads via GHL from WhatsApp/IG/FB/TikTok, existing clients via Respond.io). The real pass bar is whether the widget successfully captures the lead into GHL — it does not: submitting returns a red "Failed" / "Try Again!!" status (test: name Kate Alsaybar, phone 9397238412, message "I want to know more and book an appointment"). 100% of visitors hitting the primary CTA currently hit a dead end. Likely tied to the same missing data-tracking-id script error logged under <a class="xref" href="#item-1-6">1.6</a> — worth Owner A checking whether fixing that also fixes the submit failure. Separately worth asking Owner A/Tara: should this widget be a native WhatsApp (wa.me) deep link straight into the GHL inbox, matching how the other lead channels work, instead of a custom in-site widget?</p>
+      <p><strong>Notes / Evidence:</strong></p>
+      <ul class="plain">
+        <li>Confirmed via live screenshot 7/17 (1:55 PM PHT / 9:55 AM UAE): "Book Now" opens the in-site chat widget, not Phorest — Phorest is correctly internal/manual-only per Kate's actual booking flow (new leads via GHL from WhatsApp/IG/FB/TikTok, existing clients via Respond.io).</li>
+        <li>The real pass bar is whether the widget successfully captures the lead into GHL — it does not: submitting returns a red "Failed" / "Try Again!!" status (test: name Kate Alsaybar, phone 9397238412, message "I want to know more and book an appointment"). 100% of visitors hitting the primary CTA currently hit a dead end.</li>
+        <li>Likely tied to the same missing data-tracking-id script error logged under <a class="xref" href="#item-1-6">1.6</a> — worth Owner A checking whether fixing that also fixes the submit failure.</li>
+        <li>Separately worth asking Owner A/Tara: should this widget be a native WhatsApp (wa.me) deep link straight into the GHL inbox, matching how the other lead channels work, instead of a custom in-site widget?</li>
+      </ul>
       <p><strong>Why it matters:</strong> this is the primary booking CTA on the whole site — a broken submit here is the single highest-impact bug in the audit. Owner: A, urgent.</p>
-      <div class="evi-toggle">
-        <summary><span class="car">▸</span>📷 Click here for the failure screenshot</summary>
-        <div class="evi-body">
-          <div class="shot-grid">
-            <div class="shot"><img loading="lazy" src="assets/booking-widget-failed.png" alt="Booking chat widget showing red Failed status"><div class="cap">Contact page chat widget showing a red "Failed" status with "Try Again!!" after submitting name, number, and message. Confirmed failing on two separate Google accounts.</div></div>
-          </div>
-        </div>
-      </div>
+      <p><strong>New flags carried over from Week 27, not yet reflected elsewhere:</strong></p>
+      <ul class="plain">
+        <li>Video-verification suspension risk on all 4 GBP profiles — status needs confirming.</li>
+        <li>P0 NAP errors — wrong phone numbers actively misdirecting clients across 2GIS, Property Finder Blog, Google Play/TRS app, Yango Maps, Facebook.</li>
+        <li>A competitor claiming colour-correction leadership specifically in Khalifa City.</li>
+        <li>A 5-star review from "Jomon Jomon" (Jul 5, Saadiyat) reads spam-like — worth checking before counting toward review velocity.</li>
+        <li>A customer complaint about the front desk not opening on time at 10am, not currently tracked in this audit.</li>
+        <li>GBP owner/profile photo staleness worse than documented — Al Quoz and Motor City ~26 months old (all 4 over the 3-month target).</li>
+      </ul>
+      <p style="font-size:13px;color:var(--muted);">None of the 28 master fix tracker items were touched during Week 27 — team focus was recruitment/SMM/Front Desk Manual instead.</p>
     </div>
   </details>
 
@@ -1214,7 +1270,7 @@ ul.plain li{margin-bottom:6px;}
   <div class="tbl-wrap"><table><thead><tr><th>Block</th><th>Pass</th><th>Fail</th><th>N/A</th><th>Pending / Not Started</th><th>Notes</th></tr></thead><tbody>
     <tr><td>1 — Technical Health (6)</td><td>1</td><td>5</td><td>0</td><td>0</td><td>1.4 crawl is now a confirmed FAIL (14 real 404s + 7 confirmed 2-hop redirect chains, full 471/471 crawl complete). 1.2 Lighthouse now has 3 of 4 pages scored (Home, Locations, Contact all PASS; Booking tied to Home, pending).</td></tr>
     <tr><td>2 — SEO &amp; Structured Data (6)</td><td>3</td><td>3</td><td>0</td><td>0</td><td>Complete. Fails: 2.2 lexicon, 2.3 schema, 2.5 sitemap.</td></tr>
-    <tr><td>3 — Behaviour (5)</td><td>1</td><td>2</td><td>1</td><td>1</td><td>3.3 Vercel is N/A (WordPress, not Vercel). 3.5 is now a confirmed FAIL — critical Janabiyah quiz-popup finding plus a recurring beTracker JS error, reviewed via CSV export rather than waiting on the Clarity dashboard. 3.1 and 3.4 both point to the same root cause — wrong/blocked GA4 property.</td></tr>
+    <tr><td>3 — Behaviour (5)</td><td>1</td><td>2</td><td>1</td><td>1</td><td>3.3 Vercel is N/A (WordPress, not Vercel). 3.5 is now a confirmed FAIL — a recurring beTracker JS error, reviewed via CSV export rather than waiting on the Clarity dashboard. 3.1 and 3.4 both point to the same root cause — wrong/blocked GA4 property.</td></tr>
     <tr><td>4 — Conversion &amp; Attribution (6)</td><td>0</td><td>3</td><td>0</td><td>3</td><td>4.6 fails (desktop widget doesn't submit); 4.1 now a confirmed FAIL (0 of 221 external links carry genuine marketing UTM tagging); 4.5 partial — mobile test works functionally (routes to WhatsApp, gets confirmation) but timed at 1:02.62, just over the 60s bar. 4.2–4.4 not yet started.</td></tr>
     <tr><td>5 — Local + AI Search (5)</td><td>0</td><td>5</td><td>0</td><td>0</td><td>5.2 is now a confirmed FAIL — the checklist-compliant incognito/mobile test found Motor City at #5, missing the top-3 pass bar. 5.3 is mixed (strong on location-anchored queries, invisible on citywide ones) — logged as partial, not a clean pass/fail. 5.5 (IG Story Highlight) opened and reviewed 16 July — no new phrasing found; folded into the existing Confidence Promise inconsistency fail (Top Fix #8), thread closed.</td></tr>
     <tr><td><strong>TOTAL (28)</strong></td><td><strong>5</strong></td><td><strong>18</strong></td><td><strong>1</strong></td><td><strong>4</strong></td><td>Reflects real testing outcomes, not just task-completion — several "done" checks (e.g. GBP freshness, schema, sitemap, 1.4 crawl, 3.5 mobile sessions, 4.1 UTM tagging, 5.2 local pack) failed their own pass bar once fully tested. Updated 17 July with the 1.2/1.4/1.5/2.2/4.1 Session Findings Compilation, the 1.3b Indexing Triage, the 3.5 Mobile Session Review, and the 5.2/5.3 Completion Summary folded in.</td></tr>
@@ -1240,12 +1296,13 @@ ul.plain li{margin-bottom:6px;}
     <li>Recruitment landing pages should connect directly to the specific recruitment campaign (precedent: the "Founding 45" webpage built for Daisy), including the linked Instagram — with the ability to customize per campaign so real-time campaigns can be managed and launched as needed.</li>
   </ul>
   <div class="shot-grid" style="max-width:420px;">
-    <div class="shot"><img loading="lazy" src="assets/tara_voicenote_context.png" alt="WhatsApp conversation where Tara's voice notes were received"><div class="cap">Source conversation (WhatsApp, 17 July, 2:14–2:17 PM) where Tara's voice notes with the above direction were received.</div></div>
+    <div class="shot"><img loading="lazy" src="assets/tara_voicenote_context.png" alt="WhatsApp conversation where Tara's voice notes were received"><div class="cap">Source conversation (WhatsApp, 17 July, 2:14–2:17 PM PHT / 10:14–10:17 AM UAE) where Tara's voice notes with the above direction were received.</div></div>
   </div>
 </section>
 
 <div class="footer-note">ADHD-friendly note: one block at a time. This tracker updates as each block closes — no need to hold the whole checklist in your head.</div>
 
+</div>
 </main>
 
 <script>
